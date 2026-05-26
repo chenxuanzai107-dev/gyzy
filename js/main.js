@@ -147,7 +147,7 @@
     }, 8000);
 
     try {
-      var res = await fetch(SUPABASE_URL + '/rest/v1/activities?show_on_home=eq.true&is_published=eq.true&order=event_date.desc', {
+      var res = await fetch(SUPABASE_URL + '/rest/v1/activities?is_published=eq.true&order=is_featured.desc,event_date.desc&limit=6', {
         headers: { 'apikey': ANON_KEY }
       });
       if (res.ok) {
