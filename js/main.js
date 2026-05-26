@@ -7,22 +7,19 @@
   'use strict';
 
   /* ====== 移动端汉堡菜单 ====== */
-  const navBtn = document.getElementById('navBtn');
-  const navLinks = document.getElementById('navLinks');
+  const navBtn = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navList');
 
   if (navBtn && navLinks) {
     navBtn.addEventListener('click', function () {
       const isOpen = navLinks.classList.toggle('open');
-      navBtn.classList.toggle('open', isOpen);
       navBtn.setAttribute('aria-expanded', isOpen);
       navBtn.setAttribute('aria-label', isOpen ? '关闭菜单' : '打开菜单');
     });
 
-    // 点击导航链接后自动关闭菜单
     navLinks.querySelectorAll('a').forEach(function (link) {
       link.addEventListener('click', function () {
         navLinks.classList.remove('open');
-        navBtn.classList.remove('open');
         navBtn.setAttribute('aria-expanded', 'false');
         navBtn.setAttribute('aria-label', '打开菜单');
       });
@@ -39,7 +36,7 @@
   const backBtn = document.getElementById('backToTop');
   if (backBtn) {
     window.addEventListener('scroll', function () {
-      backBtn.classList.toggle('visible', window.scrollY > 500);
+      backBtn.classList.toggle('show', window.scrollY > 500);
     }, { passive: true });
     backBtn.addEventListener('click', function () {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -49,7 +46,7 @@
   /* ====== 滚动渐入动画 ====== */
   const revealObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
-      if (entry.isIntersecting) entry.target.classList.add('visible');
+      if (entry.isIntersecting) entry.target.classList.add('in');
     });
   }, { threshold: 0.12 });
 
