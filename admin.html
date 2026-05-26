@@ -13,6 +13,8 @@
 /* extra admin styles */
 .form-group textarea { resize: vertical; min-height: 60px; }
 .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Hide file input visually but keep it focusable via label */
+#heroFileInput { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 /* Cover upload area */
 .cover-upload-area { border: 2px dashed #d1d5db; border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 200ms; background: #fafafa; position: relative; }
 .cover-upload-area:hover, .cover-upload-area.drag-over { border-color: #F59E0B; background: #FFFBEB; }
