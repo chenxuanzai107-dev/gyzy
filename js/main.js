@@ -67,7 +67,7 @@
       const duration = 1500;
       const startTime = performance.now();
 
-      el.textContent = '0';
+      // 保持当前显示值，不清零
 
       function animate(now) {
         const elapsed = now - startTime;
