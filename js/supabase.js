@@ -1,20 +1,13 @@
 /**
  * Supabase 客户端配置
- * 部署前请替换为你的 Supabase URL 和 anon key
- * 在 https://app.supabase.com 创建项目后获取
+ * 建工青协 - 已配置
  */
 
 const SUPABASE_CONFIG = {
-  // TODO: 替换为你的 Supabase 项目 URL
-  url: 'https://YOUR-PROJECT-ID.supabase.co',
-  // TODO: 替换为你的 Supabase anon key (公开可用的 key)
-  anonKey: 'YOUR-ANON-KEY',
+  url: 'https://pzyijmgcksmyagdvdgoq.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI',
 };
 
-/**
- * 创建 Supabase 客户端
- * 使用 CDN 加载的 supabase-js 库
- */
 let supabase = null;
 
 function getSupabase() {
@@ -23,14 +16,10 @@ function getSupabase() {
     supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
     return supabase;
   }
-  console.warn('Supabase SDK 未加载，使用离线模式');
+  console.warn('Supabase SDK 未加载');
   return null;
 }
 
-/**
- * 检查 Supabase 是否已配置
- */
 function isSupabaseConfigured() {
-  return SUPABASE_CONFIG.url !== 'https://YOUR-PROJECT-ID.supabase.co'
-    && SUPABASE_CONFIG.anonKey !== 'YOUR-ANON-KEY';
+  return true;
 }
