@@ -109,9 +109,6 @@
   })();
 
   async function loadStats() {
-    var statsContainer = document.getElementById('statsContainer');
-    if (!statsContainer) return;
-
     try {
       var res = await fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', {
         headers: { 'apikey': ANON_KEY }
@@ -119,18 +116,23 @@
       if (res.ok) {
         var data = await res.json();
         if (data && data.length > 0) {
-          statsContainer.innerHTML = data.map(function (s) {
-            return '<div class="stat-card reveal">'
-              + '<div class="stat-number" data-count="' + s.value + '" data-suffix="' + (s.value >= 1000 ? '+' : '') + '">' + s.value + (s.value >= 1000 ? '+' : '') + '</div>'
-              + '<div class="stat-label">' + (s.label || '') + '</div>'
-              + '</div>';
-          }).join('');
-          statsContainer.querySelectorAll('.stat-number[data-count]').forEach(function (el) { statsObserver.observe(el); });
-          statsContainer.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+          var map = {};
+          data.forEach(function(s) { map[s.key] = s.value; });
+          setStat('service_hours', map.service_hours);
+          setStat('volunteers_count', map.volunteers);
+          setStat('activities_count', map.yearly_activities);
+          setStat('covered_people', map.people_served);
           return;
         }
       }
-    } catch (e) { /* 回退 HTML 默认值 */ }
+    } catch (e) { /* 使用 HTML 默认值 */ }
+  }
+
+  function setStat(key, value) {
+    var el = document.querySelector('[data-stat="' + key + '"]');
+    if (!el || !value) return;
+    var suffix = value >= 1000 ? '+' : '';
+    el.textContent = value + suffix;
   }
   loadStats();
 
