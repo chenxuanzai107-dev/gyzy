@@ -169,50 +169,46 @@
     }
   }
 
+  function formatDate(value) {
+    if (!value) return '时间待定';
+    var d = new Date(value);
+    if (isNaN(d.getTime())) return esc(String(value));
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
   function renderActivities(container, activities) {
     if (!activities || !activities.length) {
-      container.innerHTML = '<p style="text-align:center;color:var(--color-fg-muted);padding:20px;">暂无活动数据</p>';
+      container.innerHTML = '<div class="activities-empty">暂无活动内容</div>';
       return;
     }
-    var featured = activities[0];
-    var rest = activities.slice(1);
-    var html = '<div class="activity-featured reveal">'
-      + '<a href="activity-detail.html?id=' + (featured.id || '') + '" class="activity-featured-img">'
-      + (featured.cover_image
-        ? '<img src="' + esc(featured.cover_image) + '" alt="' + esc(featured.title) + '" loading="lazy">'
-        : '<span class="placeholder" style="color:#fff;font-size:16px;font-weight:600;">' + esc(featured.category || '活动封面') + '</span>')
-      + '</a>'
-      + '<div class="activity-featured-info">'
-      + '<span class="activity-category-tag">' + esc(featured.category || '') + '</span>'
-      + '<h3><a href="activity-detail.html?id=' + (featured.id || '') + '">' + esc(featured.title || '') + '</a></h3>'
-      + '<div class="meta">'
-      + '<span>📅 ' + esc(featured.event_date || '') + ' ' + esc(featured.event_time || '') + '</span>'
-      + '<span>📍 ' + esc(featured.location || '待定') + '</span>'
-      + '<span>👥 ' + (featured.participants || 0) + '人</span>'
-      + '<span>⏱ ' + (featured.service_hours || 0) + 'h</span>'
-      + '</div>'
-      + '<p>' + esc(featured.description || '') + '</p>'
-      + '<a href="activity-detail.html?id=' + (featured.id || '') + '" class="activity-more">查看详情 &rarr;</a>'
-      + '</div></div>';
 
-    if (rest.length > 0) {
-      html += '<div class="activity-news-list">';
-      rest.forEach(function(a) {
-        var dt = new Date(a.event_date || a.date || '');
-        var day = isNaN(dt.getTime()) ? '--' : dt.getDate();
-        var month = isNaN(dt.getTime()) ? '' : (dt.getMonth() + 1) + '月';
-        html += '<div class="activity-news-item reveal">'
-          + '<div class="activity-news-date"><span class="day">' + day + '</span>' + month + '</div>'
-          + '<div class="activity-news-info">'
-          + '<span class="activity-category-tag">' + esc(a.category || '') + '</span>'
-          + '<h4><a href="activity-detail.html?id=' + (a.id || '') + '">' + esc(a.title || '') + '</a></h4>'
-          + '<div class="meta"><span>📍 ' + esc(a.location || '待定') + '</span><span>👥 ' + (a.participants || 0) + '人</span><span>⏱ ' + (a.service_hours || 0) + 'h</span></div>'
-          + '</div></div>';
-      });
-      html += '</div>';
-    }
-    container.innerHTML = html;
-    container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+    container.innerHTML = activities.map(function(a) {
+      var id = a.id || '';
+      var title = esc(a.title || '未命名活动');
+      var category = esc(a.category || '活动');
+      var date = formatDate(a.date || a.event_date);
+      var location = esc(a.location || '地点待定');
+      var vc = Number(a.volunteers_count ?? a.participants ?? 0);
+      var sh = Number(a.service_hours ?? 0);
+      var desc = esc(a.description || '暂无活动简介');
+      var cover = a.cover_image ? esc(a.cover_image) : '';
+
+      var coverHtml = cover
+        ? '<img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><div class="activity-cover-placeholder" style="display:none;">建工青协</div>'
+        : '<div class="activity-cover-placeholder">建工青协</div>';
+
+      return '<article class="activity-card reveal">'
+        + '<a class="activity-cover" href="activity-detail.html?id=' + encodeURIComponent(id) + '" aria-label="' + title + '">' + coverHtml + '</a>'
+        + '<div class="activity-body">'
+        + '<div class="activity-topline"><span class="activity-category">' + category + '</span><span class="activity-date">' + date + '</span></div>'
+        + '<h3 class="activity-title"><a href="activity-detail.html?id=' + encodeURIComponent(id) + '">' + title + '</a></h3>'
+        + '<div class="activity-meta"><span class="activity-meta-item">📍 ' + location + '</span><span class="activity-meta-item">👥 ' + vc + '人</span><span class="activity-meta-item">⏱ ' + sh + 'h</span></div>'
+        + '<p class="activity-desc">' + desc + '</p>'
+        + '<a class="activity-more" href="activity-detail.html?id=' + encodeURIComponent(id) + '">查看详情 &rarr;</a>'
+        + '</div></article>';
+    }).join('');
+
+    container.querySelectorAll('.reveal').forEach(function(el) { revealObserver.observe(el); });
   }
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
