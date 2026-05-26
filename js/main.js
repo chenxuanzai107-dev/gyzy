@@ -243,18 +243,17 @@
       const department = document.getElementById('regDept').value.trim().substring(0, 80);
       const contact = document.getElementById('regContact').value.trim().substring(0, 50);
       const direction = document.getElementById('regDirection').value;
-      const available_time = document.getElementById('regTime').value.trim().substring(0, 50);
       const intro = document.getElementById('regIntro').value.trim().substring(0, 300);
 
       if (!name || !department || !contact) {
-        regMsg.textContent = '请填写姓名、学院专业和联系方式';
+        regMsg.textContent = '请填写姓名、专业班级和联系方式';
         regMsg.className = 'form-message error';
         btn.disabled = false;
         btn.innerHTML = originalText;
         return;
       }
 
-      const data = { name, department, contact, direction, available_time, intro };
+      const data = { name, department, contact, direction, intro };
       let success = false;
 
       // Supabase 直连

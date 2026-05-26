@@ -238,7 +238,7 @@
       if (!t) return;
       if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无报名数据</p>'; return; }
       var labels = { pending: '待审核', approved: '已通过', rejected: '已拒绝', contacted: '已联系' };
-      t.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>姓名</th><th>学院/专业</th><th>联系方式</th><th>意向部门</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
+      t.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>姓名</th><th>专业/班级</th><th>联系方式</th><th>意向部门</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
         + data.map(function(a) {
           return '<tr><td>' + e(a.name) + '</td><td>' + e(a.department) + '</td><td>' + e(a.contact) + '</td><td>' + e(a.direction) + '</td>'
             + '<td><select class="status-sel" data-id="' + a.id + '">' + ['pending','approved','rejected','contacted'].map(function(s){ return '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+(labels[s]||s)+'</option>'; }).join('') + '</select></td>'
@@ -266,7 +266,7 @@
       fetch(SUPABASE_URL+'/rest/v1/applications?order=created_at.desc', { headers: headers() })
         .then(function(r){ return r.json(); }).then(function(data) {
           if (!data || !data.length) { alert('无数据'); return; }
-          var csv = '﻿姓名,学院专业,联系方式,意向部门,可服务时间,状态,时间\n' + data.map(function(a){ return [a.name,a.department,a.contact,a.direction,a.available_time,a.status,a.created_at].join(','); }).join('\n');
+          var csv = '﻿姓名,专业班级,联系方式,意向部门,状态,时间\n' + data.map(function(a){ return [a.name,a.department,a.contact,a.direction,a.status,a.created_at].join(','); }).join('\n');
           var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
           var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'applications.csv'; a.click();
         });
