@@ -581,39 +581,67 @@
         heroArea.addEventListener('drop', function(e){ e.preventDefault(); heroArea.classList.remove('drag-over'); if(e.dataTransfer.files&&e.dataTransfer.files[0]) handleHeroFile(e.dataTransfer.files[0]); });
 
         saveBtn.addEventListener('click', async function() {
-          if (!heroFile) return;
+          if (!heroFile) { msgEl.textContent = '请先选择图片'; msgEl.style.color = '#DC2626'; return; }
           saveBtn.disabled = true;
           saveBtn.textContent = '上传中...';
           msgEl.textContent = '';
           msgEl.style.color = '';
 
-          var ext = heroFile.name.split('.').pop();
-          var fname = 'hero/hero-' + Date.now() + '.' + ext;
           try {
-            var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/site-assets/' + fname, {
-              method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'apikey': ANON_KEY }, body: heroFile
-            });
-            if (!upRes.ok) throw new Error('上传失败');
-            var publicUrl = SUPABASE_URL + '/storage/v1/object/public/site-assets/' + fname;
+            // 1. Upload to Storage
+            var ext = heroFile.name.split('.').pop();
+            var fname = 'hero/hero-' + Date.now() + '.' + ext;
+            msgEl.textContent = '正在上传图片...';
+            msgEl.style.color = '#666';
 
-            // upsert to site_settings
-            await fetch(SUPABASE_URL + '/rest/v1/site_settings', {
-              method: 'POST', headers: headers(),
+            var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/site-assets/' + fname, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token, 'apikey': ANON_KEY },
+              body: heroFile
+            });
+
+            if (!upRes.ok) {
+              var errData = await upRes.json().catch(function(){ return {}; });
+              console.error('Storage upload error:', upRes.status, errData);
+              throw new Error(errData.message || errData.error || 'Storage 上传失败 (HTTP ' + upRes.status + ')');
+            }
+
+            var publicUrl = SUPABASE_URL + '/storage/v1/object/public/site-assets/' + fname;
+            console.log('Uploaded:', publicUrl);
+
+            // 2. Save to site_settings
+            msgEl.textContent = '正在保存设置...';
+            var saveRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings?key=eq.hero_image_url', {
+              method: 'PATCH',
+              headers: headers(),
               body: JSON.stringify({ key: 'hero_image_url', value: publicUrl })
             });
-            // handle "duplicate key" by trying PATCH
-            var patchRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings?key=eq.hero_image_url', {
-              method: 'PATCH', headers: headers(),
-              body: JSON.stringify({ value: publicUrl })
-            });
+
+            // If PATCH didn't update anything (row doesn't exist), use POST
+            if (saveRes.ok) {
+              var patched = await saveRes.json();
+              if (!patched || patched.length === 0) {
+                // Row doesn't exist, create it
+                await fetch(SUPABASE_URL + '/rest/v1/site_settings', {
+                  method: 'POST', headers: headers(),
+                  body: JSON.stringify({ key: 'hero_image_url', value: publicUrl })
+                });
+              }
+            } else {
+              var saveErr = await saveRes.json().catch(function(){ return {}; });
+              console.error('site_settings save error:', saveRes.status, saveErr);
+              throw new Error(saveErr.message || '设置保存失败 (HTTP ' + saveRes.status + ')');
+            }
 
             msgEl.textContent = '首页 Banner 已更新！刷新前台首页即可看到新图片。';
             msgEl.style.color = '#16A34A';
             heroFile = null;
+            saveBtn.disabled = true;
+            saveBtn.textContent = '已保存';
           } catch(e) {
-            msgEl.textContent = '上传失败: ' + (e.message || '');
+            console.error('Hero upload failed:', e);
+            msgEl.textContent = e.message || '上传失败';
             msgEl.style.color = '#DC2626';
-          } finally {
             saveBtn.disabled = false;
             saveBtn.textContent = '保存为首页 Banner';
           }
