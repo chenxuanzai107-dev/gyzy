@@ -12,6 +12,15 @@
 /* extra admin styles */
 .form-group textarea { resize: vertical; min-height: 60px; }
 .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Cover upload area */
+.cover-upload-area { border: 2px dashed #d1d5db; border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 200ms; background: #fafafa; position: relative; }
+.cover-upload-area:hover, .cover-upload-area.drag-over { border-color: #F59E0B; background: #FFFBEB; }
+.cover-upload-icon { font-size: 32px; margin-bottom: 8px; }
+.cover-upload-area p { color: #666; font-size: 14px; margin: 0; }
+.cover-upload-area small { color: #999; font-size: 12px; }
+.cover-preview { position: relative; border-radius: 12px; overflow: hidden; }
+.cover-preview img { width: 100%; height: 180px; object-fit: cover; display: block; }
+.cover-preview-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: center; }
 @media (max-width: 768px) {
   .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-table { font-size: 12px; }
@@ -378,22 +387,99 @@
       + inp('afDate', '日期', act?.event_date, 'date') + inp('afTime', '时间', act?.event_time)
       + inp('afLoc', '地点', act?.location) + inp('afParts', '参与人数', act?.participants, 'number')
       + inp('afHours', '服务时长(h)', act?.service_hours, 'number')
-      + inp('afImg', '封面图URL', act?.cover_image)
+      + '<div class="form-group"><label>活动封面图</label>'
+      + '<div class="cover-upload-area" id="coverUploadArea">'
+      + '<input type="file" id="afCoverFile" accept="image/jpeg,image/png,image/webp" style="display:none">'
+      + '<div id="coverPlaceholder"><div class="cover-upload-icon">🖼️</div><p>点击或拖拽上传活动封面</p><small>JPG/PNG/WEBP, 最大 5MB</small></div>'
+      + '<div id="coverPreviewBox" class="cover-preview" style="display:none;"></div>'
+      + '</div>'
+      + '<input type="hidden" id="afCoverUrl" value="' + e(act?.cover_image) + '">'
+      + '<input type="hidden" id="afCoverChanged" value="">'
+      + '</div>'
       + '<div class="form-group"><label>简介</label><textarea id="afDesc" rows="3">' + e(act?.description) + '</textarea></div>'
       + '<div class="form-group"><label>详细内容</label><textarea id="afDetail" rows="5">' + e(act?.detail_content) + '</textarea></div>'
       + '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">'
       + '<button class="btn btn-outline btn-sm" id="cancelAf">取消</button><button class="btn btn-primary btn-sm" id="saveAf">保存</button></div></div>';
     document.body.appendChild(overlay);
 
+    // ---- 封面图上传逻辑 ----
+    var coverFile = null; // 待上传的 File 对象
+    var coverUploadArea = document.getElementById('coverUploadArea');
+    var coverFileInput = document.getElementById('afCoverFile');
+    var coverPlaceholder = document.getElementById('coverPlaceholder');
+    var coverPreviewBox = document.getElementById('coverPreviewBox');
+    var coverUrlInput = document.getElementById('afCoverUrl');
+    var coverChangedInput = document.getElementById('afCoverChanged');
+
+    // 编辑回显已有封面
+    if (act?.cover_image) {
+      showCoverPreview(act.cover_image);
+    }
+
+    function showCoverPreview(src) {
+      coverPlaceholder.style.display = 'none';
+      coverPreviewBox.style.display = 'block';
+      coverPreviewBox.innerHTML = '<img src="' + e(src) + '" alt="封面预览" onerror="this.style.display=\'none\';">'
+        + '<div class="cover-preview-actions">'
+        + '<button type="button" class="btn btn-sm btn-outline" id="changeCoverBtn">更换图片</button>'
+        + '<button type="button" class="btn btn-sm" style="color:#DC2626;" id="removeCoverBtn">移除图片</button>'
+        + '</div>';
+      document.getElementById('changeCoverBtn').addEventListener('click', function(){ coverFileInput.click(); });
+      document.getElementById('removeCoverBtn').addEventListener('click', function(){
+        coverFile = null; coverUrlInput.value = ''; coverChangedInput.value = 'removed';
+        coverPlaceholder.style.display = 'block'; coverPreviewBox.style.display = 'none';
+      });
+    }
+
+    function handleCoverFile(file) {
+      if (!file.type.match(/image\/(jpeg|png|webp)/)) { alert('仅支持 JPG/PNG/WEBP 格式'); return; }
+      if (file.size > 5*1024*1024) { alert('图片大小不能超过 5MB'); return; }
+      coverFile = file; coverChangedInput.value = 'changed';
+      // 本地预览
+      var reader = new FileReader();
+      reader.onload = function(e){ showCoverPreview(e.target.result); };
+      reader.readAsDataURL(file);
+    }
+
+    coverUploadArea.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') coverFileInput.click(); });
+    coverFileInput.addEventListener('change', function(){ if(this.files&&this.files[0]) handleCoverFile(this.files[0]); });
+    coverUploadArea.addEventListener('dragover', function(e){ e.preventDefault(); coverUploadArea.classList.add('drag-over'); });
+    coverUploadArea.addEventListener('dragleave', function(){ coverUploadArea.classList.remove('drag-over'); });
+    coverUploadArea.addEventListener('drop', function(e){ e.preventDefault(); coverUploadArea.classList.remove('drag-over'); if(e.dataTransfer.files&&e.dataTransfer.files[0]) handleCoverFile(e.dataTransfer.files[0]); });
+
     document.getElementById('cancelAf').addEventListener('click', function(){ overlay.remove(); });
-    document.getElementById('saveAf').addEventListener('click', function() {
+    document.getElementById('saveAf').addEventListener('click', async function() {
       var d = {
         title: gv('afTitle'), category: gv('afCat'), event_date: gv('afDate'),
         event_time: gv('afTime'), location: gv('afLoc'),
         participants: parseInt(gv('afParts'))||0, service_hours: parseInt(gv('afHours'))||0,
-        cover_image: gv('afImg'), description: gv('afDesc'), detail_content: gv('afDetail')
+        description: gv('afDesc'), detail_content: gv('afDetail')
       };
       if (!d.title) { alert('请输入标题'); return; }
+
+      // 处理封面图
+      var changed = coverChangedInput.value;
+      if (changed === 'removed') {
+        d.cover_image = null;
+      } else if (changed === 'changed' && coverFile) {
+        // 上传到 Supabase Storage
+        var ext = coverFile.name.split('.').pop();
+        var fname = 'covers/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+        var formData = new FormData();
+        formData.append('file', coverFile);
+        try {
+          var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/activity-covers/' + fname, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'apikey': ANON_KEY },
+            body: coverFile
+          });
+          if (!upRes.ok) { var upErr = await upRes.json().catch(function(){return {};}); throw new Error(upErr.message || '上传失败'); }
+          d.cover_image = SUPABASE_URL + '/storage/v1/object/public/activity-covers/' + fname;
+        } catch(e) { alert('封面上传失败: ' + (e.message || '')); return; }
+      } else {
+        d.cover_image = coverUrlInput.value || null;
+      }
+
       var url = isEdit ? SUPABASE_URL+'/rest/v1/activities?id=eq.'+act.id : SUPABASE_URL+'/rest/v1/activities';
       var method = isEdit ? 'PATCH' : 'POST';
       if (!isEdit) { d.show_on_home = true; d.is_published = true; }
