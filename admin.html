@@ -12,56 +12,294 @@
 <body>
 
 <div class="admin-layout">
-  <!-- 侧边栏 -->
   <aside class="admin-sidebar">
     <div class="admin-sidebar-brand">建工青协</div>
     <nav class="admin-nav">
-      <div class="admin-nav-item active" data-tab="dashboard">
-        <span class="admin-nav-icon">📊</span><span>仪表盘</span>
-      </div>
-      <div class="admin-nav-item" data-tab="applications">
-        <span class="admin-nav-icon">📋</span><span>报名管理</span>
-      </div>
-      <div class="admin-nav-item" data-tab="messages">
-        <span class="admin-nav-icon">💬</span><span>留言管理</span>
-      </div>
-      <div class="admin-nav-item" data-tab="activities">
-        <span class="admin-nav-icon">📅</span><span>活动管理</span>
-      </div>
-      <div class="admin-nav-item" data-tab="stats">
-        <span class="admin-nav-icon">📈</span><span>统计管理</span>
-      </div>
+      <div class="admin-nav-item active" data-tab="dashboard"><span class="admin-nav-icon">📊</span><span>仪表盘</span></div>
+      <div class="admin-nav-item" data-tab="applications"><span class="admin-nav-icon">📋</span><span>报名管理</span></div>
+      <div class="admin-nav-item" data-tab="messages"><span class="admin-nav-icon">💬</span><span>留言管理</span></div>
+      <div class="admin-nav-item" data-tab="activities"><span class="admin-nav-icon">📅</span><span>活动管理</span></div>
+      <div class="admin-nav-item" data-tab="stats"><span class="admin-nav-icon">📈</span><span>统计管理</span></div>
     </nav>
     <div class="admin-sidebar-footer">
-      <button id="logoutBtn" class="btn btn-outline btn-sm" style="width:100%;color:#fff;border-color:rgba(255,255,255,0.2);">
-        🚪 退出登录
-      </button>
+      <button id="logoutBtn" class="btn btn-outline btn-sm" style="width:100%;color:#fff;border-color:rgba(255,255,255,0.2);">🚪 退出登录</button>
     </div>
   </aside>
 
-  <!-- 主内容区 -->
   <div class="admin-main">
     <header class="admin-topbar">
       <h1>管理后台</h1>
       <div class="admin-topbar-right">
         <span id="adminUserEmail">管理员</span>
-        <a href="index.html" class="btn btn-outline btn-sm" title="返回前台">🏠 前台</a>
+        <a href="index.html" class="btn btn-outline btn-sm">🏠 前台</a>
       </div>
     </header>
-
-    <div class="admin-content" id="adminContent">
-      <div class="admin-loading">加载中...</div>
-    </div>
+    <div class="admin-content" id="adminContent"><div class="admin-loading">验证登录...</div></div>
   </div>
 </div>
 
-<!-- 主内容由 JS 动态渲染 -->
-<div id="app" style="display:none;"></div>
+<script>
+// 纯 fetch 管理后台 - 无外部 SDK 依赖
+(function () {
+  'use strict';
 
-<!-- Supabase SDK + All JS -->
-<script src="assets/js/supabase.min.js"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/admin.js"></script>
+  var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
+  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
+
+  var token = localStorage.getItem('gyzy_token');
+  var user = null;
+
+  function authHeaders() {
+    return token ? { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'apikey': ANON_KEY, 'Content-Type': 'application/json' };
+  }
+
+  // Verify auth on load
+  if (!token) { window.location.href = 'login.html'; }
+
+  fetch(SUPABASE_URL + '/auth/v1/user', { headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token } })
+    .then(function(r) {
+      if (!r.ok) { localStorage.clear(); window.location.href = 'login.html'; return; }
+      return r.json();
+    })
+    .then(function(u) {
+      if (!u) return;
+      user = u;
+      document.getElementById('adminUserEmail').textContent = u.email || '管理员';
+      initTabs();
+      loadDashboard();
+    })
+    .catch(function() { localStorage.clear(); window.location.href = 'login.html'; });
+
+  function initTabs() {
+    document.querySelectorAll('.admin-nav-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.admin-nav-item').forEach(function(i) { i.classList.remove('active'); });
+        item.classList.add('active');
+        var tab = item.getAttribute('data-tab');
+        if (tab === 'dashboard') loadDashboard();
+        else if (tab === 'applications') loadApplications();
+        else if (tab === 'messages') loadMessages();
+        else if (tab === 'activities') loadActivities();
+        else if (tab === 'stats') loadStats();
+      });
+    });
+  }
+
+  function fetchAPI(path) {
+    return fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: authHeaders() }).then(function(r) { return r.json(); });
+  }
+
+  function loadDashboard() {
+    var c = document.getElementById('adminContent');
+    c.innerHTML = '<div class="admin-loading">加载中...</div>';
+    Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/applications?select=count', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [{count:0}];}),
+      fetch(SUPABASE_URL + '/rest/v1/messages?select=count', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [{count:0}];}),
+      fetch(SUPABASE_URL + '/rest/v1/activities?select=count', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [{count:0}];}),
+    ]).then(function(results) {
+      c.innerHTML = '<h2>仪表盘</h2>'
+        + '<div class="admin-stats-grid">'
+        + '<div class="admin-stat-card"><div class="admin-stat-num">' + (results[0][0]?.count || 0) + '</div><div>报名总数</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num">' + (results[1][0]?.count || 0) + '</div><div>留言总数</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num">' + (results[2][0]?.count || 0) + '</div><div>活动总数</div></div>'
+        + '</div><p style="margin-top:24px;color:#999;font-size:14px;">欢迎使用建工青协管理后台</p>';
+    });
+  }
+
+  function loadApplications() {
+    var c = document.getElementById('adminContent');
+    c.innerHTML = '<h2>报名管理</h2><input type="text" id="appSearch" placeholder="搜索..." class="admin-input" style="max-width:300px;margin-bottom:16px;"> <button id="exportCSV" class="btn btn-sm btn-outline">导出 CSV</button><div id="appTable"><div class="admin-loading">加载中...</div></div>';
+    fetchAPI('applications?order=created_at.desc').then(function(data) {
+      renderAppTable(data);
+    });
+    document.getElementById('appSearch').addEventListener('input', function() {
+      var q = this.value;
+      var url = 'applications?order=created_at.desc';
+      if (q) url += '&or=(name.ilike.*' + q + '*,contact.ilike.*' + q + '*)';
+      fetchAPI(url).then(renderAppTable);
+    });
+    document.getElementById('exportCSV').addEventListener('click', function() {
+      fetchAPI('applications?order=created_at.desc').then(function(data) {
+        var csv = '﻿姓名,学院专业,联系方式,志愿方向,可服务时间,状态,时间\n' + data.map(function(a) {
+          return [a.name, a.department, a.contact, a.direction, a.available_time, a.status, a.created_at].join(',');
+        }).join('\n');
+        var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a'); link.href = url; link.download = 'applications.csv'; link.click();
+      });
+    });
+  }
+
+  function renderAppTable(data) {
+    var t = document.getElementById('appTable');
+    if (!t) return;
+    if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无报名数据</p>'; return; }
+    var statusLabels = {pending:'待审核',approved:'已通过',rejected:'已拒绝',contacted:'已联系'};
+    t.innerHTML = '<table class="admin-table"><thead><tr><th>姓名</th><th>学院/专业</th><th>联系方式</th><th>志愿方向</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
+      + data.map(function(a) {
+        return '<tr><td>'+(a.name||'')+'</td><td>'+(a.department||'')+'</td><td>'+(a.contact||'')+'</td><td>'+(a.direction||'')+'</td>'
+          + '<td><select class="status-sel" data-id="'+a.id+'">'+ ['pending','approved','rejected','contacted'].map(function(s){return '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+(statusLabels[s]||s)+'</option>';}).join('')+'</select></td>'
+          + '<td>'+new Date(a.created_at).toLocaleDateString('zh-CN')+'</td>'
+          + '<td><button class="btn btn-sm" style="color:#DC2626;" data-del="'+a.id+'">删除</button></td></tr>';
+      }).join('') + '</tbody></table>';
+
+    t.querySelectorAll('.status-sel').forEach(function(s) {
+      s.addEventListener('change', function() {
+        fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-id'), {method:'PATCH',headers:authHeaders(),body:JSON.stringify({status:this.value})}).then(function(){});
+      });
+    });
+    t.querySelectorAll('[data-del]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        if(!confirm('确定删除?')) return;
+        fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-del'), {method:'DELETE',headers:authHeaders()}).then(function(){loadApplications();});
+      });
+    });
+  }
+
+  function loadMessages() {
+    var c = document.getElementById('adminContent');
+    c.innerHTML = '<h2>留言管理</h2><input type="text" id="msgSearch" placeholder="搜索..." class="admin-input" style="max-width:300px;margin-bottom:16px;"><div id="msgTable"><div class="admin-loading">加载中...</div></div>';
+    fetchAPI('messages?order=created_at.desc').then(function(data) { renderMsgTable(data); });
+    document.getElementById('msgSearch').addEventListener('input', function() {
+      var q = this.value;
+      var url = 'messages?order=created_at.desc';
+      if (q) url += '&or=(name.ilike.*' + q + '*,content.ilike.*' + q + '*)';
+      fetchAPI(url).then(renderMsgTable);
+    });
+  }
+
+  function renderMsgTable(data) {
+    var t = document.getElementById('msgTable');
+    if (!t) return;
+    if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无留言</p>'; return; }
+    t.innerHTML = '<table class="admin-table"><thead><tr><th>姓名</th><th>联系方式</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
+      + data.map(function(m) {
+        return '<tr><td>'+(m.name||'')+'</td><td>'+(m.contact||'')+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(m.content||'')+'">'+(m.content||'')+'</td>'
+          + '<td><span class="badge '+(m.is_handled?'badge-green':'badge-orange')+'">'+(m.is_handled?'已处理':'未处理')+'</span></td>'
+          + '<td>'+new Date(m.created_at).toLocaleDateString('zh-CN')+'</td>'
+          + '<td>'+(m.is_handled?'':'<button class="btn btn-sm mark-btn" data-id="'+m.id+'">标记已处理</button> ')
+          + '<button class="btn btn-sm" style="color:#DC2626;" data-del="'+m.id+'">删除</button></td></tr>';
+      }).join('') + '</tbody></table>';
+
+    t.querySelectorAll('.mark-btn').forEach(function(b) {
+      b.addEventListener('click', function() {
+        fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-id'), {method:'PATCH',headers:authHeaders(),body:JSON.stringify({is_handled:true})}).then(function(){loadMessages();});
+      });
+    });
+    t.querySelectorAll('[data-del]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        if(!confirm('确定删除?')) return;
+        fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-del'), {method:'DELETE',headers:authHeaders()}).then(function(){loadMessages();});
+      });
+    });
+  }
+
+  function loadActivities() {
+    var c = document.getElementById('adminContent');
+    c.innerHTML = '<h2>活动管理</h2><button id="addActBtn" class="btn btn-primary btn-sm" style="margin-bottom:16px;">+ 新增活动</button><div id="actTable"><div class="admin-loading">加载中...</div></div>';
+    fetchAPI('activities?order=event_date.desc').then(function(data) { renderActTable(data); });
+    document.getElementById('addActBtn').addEventListener('click', function() { showActForm(null); });
+  }
+
+  function renderActTable(data) {
+    var t = document.getElementById('actTable');
+    if (!t) return;
+    if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无活动</p>'; return; }
+    t.innerHTML = '<table class="admin-table"><thead><tr><th>标题</th><th>分类</th><th>日期</th><th>首页</th><th>操作</th></tr></thead><tbody>'
+      + data.map(function(a) {
+        return '<tr><td>'+(a.title||'')+'</td><td>'+(a.category||'')+'</td><td>'+(a.event_date||'')+'</td>'
+          + '<td>'+(a.show_on_home?'✅':'❌')+'</td>'
+          + '<td><button class="btn btn-sm toggle-btn" data-id="'+a.id+'" data-show="'+(!a.show_on_home)+'">'+(a.show_on_home?'隐藏':'显示')+'</button> '
+          + '<button class="btn btn-sm edit-btn" data-id="'+a.id+'">编辑</button> '
+          + '<button class="btn btn-sm" style="color:#DC2626;" data-del="'+a.id+'">删除</button></td></tr>';
+      }).join('') + '</tbody></table>';
+
+    t.querySelectorAll('.toggle-btn').forEach(function(b) {
+      b.addEventListener('click', function() {
+        fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), {method:'PATCH',headers:authHeaders(),body:JSON.stringify({show_on_home:this.getAttribute('data-show')==='true'})}).then(function(){loadActivities();});
+      });
+    });
+    t.querySelectorAll('.edit-btn').forEach(function(b) {
+      b.addEventListener('click', function() {
+        fetchAPI('activities?id=eq.'+this.getAttribute('data-id')).then(function(d) { if(d[0]) showActForm(d[0]); });
+      });
+    });
+    t.querySelectorAll('[data-del]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        if(!confirm('确定删除?')) return;
+        fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-del'), {method:'DELETE',headers:authHeaders()}).then(function(){loadActivities();});
+      });
+    });
+  }
+
+  function showActForm(act) {
+    var isEdit = !!act;
+    var overlay = document.createElement('div');
+    overlay.className = 'admin-modal-overlay';
+    overlay.innerHTML = '<div class="admin-modal"><h3>'+(isEdit?'编辑活动':'新增活动')+'</h3>'
+      + '<div class="form-grid">'
+      + '<div class="form-group"><label>标题</label><input id="afTitle" value="'+(act?.title||'')+'"></div>'
+      + '<div class="form-group"><label>分类</label><input id="afCat" value="'+(act?.category||'')+'"></div>'
+      + '<div class="form-group"><label>日期</label><input id="afDate" type="date" value="'+(act?.event_date||'')+'"></div>'
+      + '<div class="form-group"><label>时间</label><input id="afTime" value="'+(act?.event_time||'')+'"></div>'
+      + '<div class="form-group"><label>地点</label><input id="afLoc" value="'+(act?.location||'')+'"></div>'
+      + '<div class="form-group"><label>参与人数</label><input id="afParts" type="number" value="'+(act?.participants||'')+'"></div>'
+      + '<div class="form-group"><label>服务时长(h)</label><input id="afHours" type="number" value="'+(act?.service_hours||'')+'"></div>'
+      + '<div class="form-group"><label>封面图URL</label><input id="afImg" value="'+(act?.cover_image||'')+'"></div>'
+      + '</div><div class="form-group"><label>简介</label><textarea id="afDesc" rows="3">'+(act?.description||'')+'</textarea></div>'
+      + '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">'
+      + '<button class="btn btn-outline btn-sm" id="cancelAf">取消</button>'
+      + '<button class="btn btn-primary btn-sm" id="saveAf">保存</button></div></div>';
+    document.body.appendChild(overlay);
+
+    document.getElementById('cancelAf').addEventListener('click', function(){overlay.remove();});
+    document.getElementById('saveAf').addEventListener('click', function() {
+      var d = {
+        title: document.getElementById('afTitle').value,
+        category: document.getElementById('afCat').value,
+        event_date: document.getElementById('afDate').value,
+        event_time: document.getElementById('afTime').value,
+        location: document.getElementById('afLoc').value,
+        participants: parseInt(document.getElementById('afParts').value)||0,
+        service_hours: parseInt(document.getElementById('afHours').value)||0,
+        cover_image: document.getElementById('afImg').value,
+        description: document.getElementById('afDesc').value
+      };
+      var method = isEdit ? 'PATCH' : 'POST';
+      var url = isEdit ? SUPABASE_URL+'/rest/v1/activities?id=eq.'+act.id : SUPABASE_URL+'/rest/v1/activities';
+      if (!isEdit) d.show_on_home = true;
+      fetch(url, {method:method,headers:authHeaders(),body:JSON.stringify(d)}).then(function() {
+        overlay.remove();
+        loadActivities();
+      });
+    });
+  }
+
+  function loadStats() {
+    var c = document.getElementById('adminContent');
+    c.innerHTML = '<h2>统计管理</h2><div id="statsForm"><div class="admin-loading">加载中...</div></div>';
+    fetchAPI('site_stats?order=id').then(function(data) {
+      var f = document.getElementById('statsForm');
+      if (!data || !data.length) { f.innerHTML = '<p>暂无数据</p>'; return; }
+      f.innerHTML = data.map(function(s) {
+        return '<div class="form-group" style="margin-bottom:12px;"><label>'+(s.label||s.key)+'</label><input type="number" id="st_'+s.key+'" value="'+s.value+'"></div>';
+      }).join('')
+        + '<button id="saveStatsBtn" class="btn btn-primary btn-sm" style="margin-top:12px;">保存</button>';
+      document.getElementById('saveStatsBtn').addEventListener('click', function() {
+        data.forEach(function(s) {
+          var v = parseInt(document.getElementById('st_'+s.key).value)||0;
+          fetch(SUPABASE_URL+'/rest/v1/site_stats?key=eq.'+s.key, {method:'PATCH',headers:authHeaders(),body:JSON.stringify({value:v})});
+        });
+        alert('已保存');
+      });
+    });
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', function() {
+    localStorage.clear();
+    window.location.href = 'login.html';
+  });
+})();
+</script>
 </body>
 </html>
