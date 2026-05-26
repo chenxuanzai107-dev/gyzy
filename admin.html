@@ -525,15 +525,15 @@
         var currentUrl = (data && data[0]) ? data[0].value : '';
         var f = document.getElementById('heroSettingsForm');
         f.innerHTML = '<p style="margin-bottom:16px;font-weight:600;">首页 Banner 图片</p>'
-          + '<div class="cover-upload-area" id="heroUploadArea" style="max-width:600px;">'
+          + '<label for="heroFileInput" class="cover-upload-area" id="heroUploadArea" style="max-width:600px;display:block;">'
+          + '<input type="file" id="heroFileInput" accept="image/jpeg,image/png,image/webp" hidden>'
           + '<div id="heroPlaceholder">'
           + '<div class="cover-upload-icon">🖼️</div>'
           + '<p>点击或拖拽上传首页大图</p>'
           + '<small>建议横向图片 16:9 或 21:9，JPG/PNG/WEBP，最大 5MB</small>'
           + '</div>'
           + '<div id="heroPreviewBox" class="cover-preview" style="display:none;"></div>'
-          + '</div>'
-          + '<input type="file" id="heroFileInput" accept="image/jpeg,image/png,image/webp" style="position:absolute;left:-9999px;width:1px;height:1px;">'
+          + '</label>'
           + '<div style="margin-top:16px;display:flex;gap:8px;">'
           + '<button id="saveHeroBtn" class="btn btn-primary btn-sm" disabled>保存为首页 Banner</button>'
           + '<button id="resetHeroBtn" class="btn btn-outline btn-sm">恢复默认</button>'
@@ -574,10 +574,7 @@
           msgEl.textContent = '';
         }
 
-        // Click area to pick file
-        var heroArea = document.getElementById('heroUploadArea');
-        heroArea.addEventListener('click', function(){ heroInput.click(); });
-        // File input change
+        // File input change (click handled by <label>)
         heroInput.addEventListener('change', function(){ if(this.files&&this.files[0]) handleHeroFile(this.files[0]); });
         // Drag and drop
         heroArea.addEventListener('dragover', function(e){ e.preventDefault(); heroArea.classList.add('drag-over'); });
