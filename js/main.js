@@ -138,13 +138,13 @@
     var container = document.getElementById('activitiesGrid');
     if (!container) return;
 
-    // 8秒超时回退，避免永久"加载中"
+    // 5秒超时回退
     var loaded = false;
     setTimeout(function() {
       if (!loaded) {
-        container.innerHTML = '<p style="text-align:center;color:var(--text-2);padding:24px;">暂无活动内容</p>';
+        container.innerHTML = '<div class="activities-empty">暂无活动内容</div>';
       }
-    }, 8000);
+    }, 5000);
 
     try {
       var res = await fetch(SUPABASE_URL + '/rest/v1/activities?is_published=eq.true&order=is_featured.desc,event_date.desc&limit=6', {
