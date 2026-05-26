@@ -87,98 +87,95 @@
     statsObserver.observe(el);
   });
 
-  /* ====== 从 Supabase 加载统计数据(如果已配置) ====== */
+  /* ====== 从 Supabase 加载统计数据 ====== */
+  var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
+  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
+
   async function loadStats() {
-    const statsContainer = document.getElementById('statsContainer');
+    var statsContainer = document.getElementById('statsContainer');
     if (!statsContainer) return;
 
-    if (isSupabaseConfigured()) {
-      try {
-        const sb = getSupabase();
-        if (sb) {
-          const { data, error } = await sb.from('site_stats').select('*');
-          if (!error && data && data.length > 0) {
-            statsContainer.innerHTML = data.map(function (s) {
-              return '<div class="stat-card reveal">'
-                + '<div class="stat-number" data-count="' + s.value + '" data-suffix="' + (s.value >= 1000 ? '+' : '') + '">' + s.value + (s.value >= 1000 ? '+' : '') + '</div>'
-                + '<div class="stat-label">' + (s.label || '') + '</div>'
-                + '</div>';
-            }).join('');
-            // 重新观察新元素
-            statsContainer.querySelectorAll('.stat-number[data-count]').forEach(function (el) {
-              statsObserver.observe(el);
-            });
-            statsContainer.querySelectorAll('.reveal').forEach(function (el) {
-              revealObserver.observe(el);
-            });
-            return;
-          }
+    try {
+      var res = await fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', {
+        headers: { 'apikey': ANON_KEY }
+      });
+      if (res.ok) {
+        var data = await res.json();
+        if (data && data.length > 0) {
+          statsContainer.innerHTML = data.map(function (s) {
+            return '<div class="stat-card reveal">'
+              + '<div class="stat-number" data-count="' + s.value + '" data-suffix="' + (s.value >= 1000 ? '+' : '') + '">' + s.value + (s.value >= 1000 ? '+' : '') + '</div>'
+              + '<div class="stat-label">' + (s.label || '') + '</div>'
+              + '</div>';
+          }).join('');
+          statsContainer.querySelectorAll('.stat-number[data-count]').forEach(function (el) { statsObserver.observe(el); });
+          statsContainer.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+          return;
         }
-      } catch (e) { /* 回退到默认值 */ }
-    }
-    // 使用 HTML 中的默认值
+      }
+    } catch (e) { /* 回退 HTML 默认值 */ }
   }
   loadStats();
 
   /* ====== 从 Supabase 加载活动数据 ====== */
   async function loadActivities() {
-    const container = document.getElementById('activitiesGrid');
+    var container = document.getElementById('activitiesGrid');
     if (!container) return;
 
-    if (isSupabaseConfigured()) {
-      try {
-        const sb = getSupabase();
-        if (sb) {
-          const { data, error } = await sb.from('activities').select('*').eq('show_on_home', true).order('event_date', { ascending: false });
-          if (!error && data && data.length > 0) {
-            renderActivities(container, data);
-            return;
-          }
-        }
-      } catch (e) { /* 回退到默认值 */ }
-    }
-    // 离线模式: 从 JSON 加载
     try {
-      const res = await fetch('data/activities.json');
-      const data = await res.json();
-      renderActivities(container, data);
+      var res = await fetch(SUPABASE_URL + '/rest/v1/activities?show_on_home=eq.true&is_published=eq.true&order=event_date.desc', {
+        headers: { 'apikey': ANON_KEY }
+      });
+      if (res.ok) {
+        var data = await res.json();
+        if (data && data.length > 0) { renderActivities(container, data); return; }
+      }
+    } catch (e) { /* 回退 */ }
+    // 离线: JSON
+    try {
+      var r2 = await fetch('data/activities.json');
+      renderActivities(container, await r2.json());
     } catch (e) {
       container.innerHTML = '<p style="text-align:center;color:var(--color-fg-muted);padding:40px;">活动数据加载中...</p>';
     }
   }
 
-  function renderActivities(container, activities) {
-    const categoryIcons = {
-      '社区服务': '🏠', '科普教育': '🏫', '环保公益': '🌿',
-      '支教助学': '📖', '爱心公益': '💝', '校园服务': '🎓',
-    };
+  var categoryColors = {
+    '社区服务': ['#F59E0B', '#FBBF24'],
+    '科普教育': ['#2563EB', '#60A5FA'],
+    '环保公益': ['#16A34A', '#4ADE80'],
+    '支教助学': ['#7C3AED', '#A78BFA'],
+    '爱心公益': ['#DC2626', '#F87171'],
+    '校园服务': ['#0891B2', '#22D3EE'],
+  };
 
+  function renderActivities(container, activities) {
     container.innerHTML = activities.map(function (a) {
-      const icon = categoryIcons[a.category] || '📋';
+      var imgHtml;
+      if (a.cover_image) {
+        imgHtml = '<img src="' + esc(a.cover_image) + '" alt="' + esc(a.title || '活动') + '" class="activity-cover-img" loading="lazy">';
+      } else {
+        var colors = categoryColors[a.category] || ['#F59E0B', '#FCD34D'];
+        imgHtml = '<div class="activity-img-placeholder" style="background:linear-gradient(135deg,' + colors[0] + ',' + colors[1] + ')">' + esc(a.category || '') + '</div>';
+      }
       return '<article class="activity-card reveal">'
-        + '<div class="activity-img">'
-        + '<div class="activity-img-placeholder">' + icon + '</div>'
-        + '<span class="activity-category-tag">' + (a.category || '') + '</span>'
-        + '</div>'
+        + '<div class="activity-img">' + imgHtml
+        + '<span class="activity-category-tag">' + esc(a.category || '') + '</span></div>'
         + '<div class="activity-body">'
-        + '<h4>' + (a.title || '') + '</h4>'
+        + '<h4>' + esc(a.title || '') + '</h4>'
         + '<div class="activity-meta">'
-        + '<span>📅 ' + (a.event_date || a.date || '') + '</span>'
-        + '<span>📍 ' + (a.location || '待定') + '</span>'
-        + '</div>'
+        + '<span>📅 ' + esc(a.event_date || a.date || '') + '</span>'
+        + '<span>📍 ' + esc(a.location || '待定') + '</span></div>'
         + '<div class="activity-meta">'
         + '<span>👥 ' + (a.participants || 0) + '人</span>'
-        + '<span>⏱ ' + (a.service_hours || a.serviceHours || 0) + '小时</span>'
-        + '</div>'
-        + '<p>' + (a.description || '') + '</p>'
-        + '</div>'
-        + '</article>';
+        + '<span>⏱ ' + (a.service_hours || a.serviceHours || 0) + '小时</span></div>'
+        + '<p>' + esc(a.description || '') + '</p>'
+        + '</div></article>';
     }).join('');
-
-    container.querySelectorAll('.reveal').forEach(function (el) {
-      revealObserver.observe(el);
-    });
+    container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
   }
+
+  function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   loadActivities();
 
   /* ====== 报名表单提交 (含防刷) ====== */
