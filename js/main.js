@@ -90,7 +90,7 @@
 
   // 加载首页 Hero Banner 图片
   (function loadHeroImage() {
-    var hero = document.querySelector('.hero-banner');
+    var hero = document.querySelector('.hero');
     if (!hero) return;
     fetch(SUPABASE_URL + '/rest/v1/site_settings?select=value&key=eq.hero_image_url', {
       headers: { 'apikey': ANON_KEY }
