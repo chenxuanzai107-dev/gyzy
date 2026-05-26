@@ -53,22 +53,39 @@
     return token ? { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'apikey': ANON_KEY, 'Content-Type': 'application/json' };
   }
 
-  // Verify auth on load
+  // Verify auth + admin role on load
   if (!token) { window.location.href = 'login.html'; }
 
   fetch(SUPABASE_URL + '/auth/v1/user', { headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token } })
     .then(function(r) {
-      if (!r.ok) { localStorage.clear(); window.location.href = 'login.html'; return; }
+      if (!r.ok) { localStorage.clear(); window.location.href = 'login.html'; throw new Error('auth'); }
       return r.json();
     })
     .then(function(u) {
-      if (!u) return;
+      if (!u) throw new Error('no user');
       user = u;
-      document.getElementById('adminUserEmail').textContent = u.email || '管理员';
+      // 检查是否为管理员
+      return fetch(SUPABASE_URL + '/rest/v1/admin_users?id=eq.' + u.id, {
+        headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token }
+      }).then(function(r) { return r.json(); });
+    })
+    .then(function(admins) {
+      if (!admins || !admins.length) {
+        alert('当前账号无后台管理权限');
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return;
+      }
+      document.getElementById('adminUserEmail').textContent = user.email + ' (' + (admins[0].role === 'super' ? '超管' : '管理员') + ')';
       initTabs();
       loadDashboard();
     })
-    .catch(function() { localStorage.clear(); window.location.href = 'login.html'; });
+    .catch(function(e) {
+      if (e.message !== 'auth' && e.message !== 'no user') {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    });
 
   function initTabs() {
     document.querySelectorAll('.admin-nav-item').forEach(function(item) {
@@ -92,16 +109,32 @@
   function loadDashboard() {
     var c = document.getElementById('adminContent');
     c.innerHTML = '<div class="admin-loading">加载中...</div>';
+
+    function count(path) {
+      return fetch(SUPABASE_URL + '/rest/v1/' + path + '?select=count', { headers: authHeaders() })
+        .then(function(r){ return r.json(); }).then(function(d){ return d[0]?.count || 0; }).catch(function(){ return 0; });
+    }
+
     Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/applications?select=count', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [{count:0}];}),
-      fetch(SUPABASE_URL + '/rest/v1/messages?select=count', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [{count:0}];}),
-      fetch(SUPABASE_URL + '/rest/v1/activities?select=count', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [{count:0}];}),
+      count('applications'),
+      count('applications?status=eq.pending'),
+      count('messages'),
+      count('messages?is_handled=eq.false'),
+      count('activities'),
+      fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [];}),
     ]).then(function(results) {
+      var totalApps = results[0], pendingApps = results[1], totalMsgs = results[2];
+      var unhandledMsgs = results[3], totalActs = results[4], stats = results[5] || [];
+      var serviceHours = (stats.find(function(s){return s.key==='service_hours';}) || {}).value || 3200;
+
       c.innerHTML = '<h2>仪表盘</h2>'
         + '<div class="admin-stats-grid">'
-        + '<div class="admin-stat-card"><div class="admin-stat-num">' + (results[0][0]?.count || 0) + '</div><div>报名总数</div></div>'
-        + '<div class="admin-stat-card"><div class="admin-stat-num">' + (results[1][0]?.count || 0) + '</div><div>留言总数</div></div>'
-        + '<div class="admin-stat-card"><div class="admin-stat-num">' + (results[2][0]?.count || 0) + '</div><div>活动总数</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num">' + totalApps + '</div><div>报名总数</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num" style="color:' + (pendingApps > 0 ? '#DC2626' : '') + '">' + pendingApps + '</div><div>待审核报名</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num">' + totalMsgs + '</div><div>留言总数</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num" style="color:' + (unhandledMsgs > 0 ? '#DC2626' : '') + '">' + unhandledMsgs + '</div><div>未处理留言</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num">' + totalActs + '</div><div>已发布活动</div></div>'
+        + '<div class="admin-stat-card"><div class="admin-stat-num">' + serviceHours + '</div><div>累计服务时长(h)</div></div>'
         + '</div><p style="margin-top:24px;color:#999;font-size:14px;">欢迎使用建工青协管理后台</p>';
     });
   }

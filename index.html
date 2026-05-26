@@ -59,7 +59,7 @@
       <h1 id="heroTitle">用青春点亮<span class="highlight">志愿之光</span></h1>
       <p class="hero-subtitle">建筑工程学院青年志愿者协会，汇聚青春力量，践行志愿精神。我们走进社区、服务校园，用行动传递温暖与关爱。</p>
       <div class="hero-cta">
-        <a href="#join" class="btn btn-primary btn-lg">加入我们 <span aria-hidden="true">&rarr;</span></a>
+        <a href="#apply" class="btn btn-primary btn-lg">加入我们 <span aria-hidden="true">&rarr;</span></a>
         <a href="#about" class="btn btn-outline btn-lg">了解更多</a>
       </div>
     </div>
@@ -166,7 +166,9 @@
     </div>
 
     <!-- 报名表单 -->
-    <div class="registration-form reveal" id="registrationFormContainer">
+    <div class="registration-form reveal" id="apply">
+      <!-- 防刷 honeypot -->
+      <input type="text" name="website" id="regHoneypot" style="display:none" tabindex="-1" autocomplete="off">
       <h3>志愿者报名表</h3>
       <form id="registrationForm" novalidate>
         <div class="form-grid">
@@ -222,6 +224,7 @@
       <p>有任何建议或问题？欢迎给我们留言</p>
     </div>
     <div class="feedback-form-card reveal">
+      <input type="text" name="website" id="fbHoneypot" style="display:none" tabindex="-1" autocomplete="off">
       <form id="feedbackForm" novalidate>
         <div class="form-group">
           <label for="fbName">姓名 <span class="required">*</span></label>

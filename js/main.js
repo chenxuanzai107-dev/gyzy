@@ -181,7 +181,7 @@
   }
   loadActivities();
 
-  /* ====== 报名表单提交 ====== */
+  /* ====== 报名表单提交 (含防刷) ====== */
   const regForm = document.getElementById('registrationForm');
   const regMsg = document.getElementById('regMessage');
 
@@ -190,22 +190,38 @@
       e.preventDefault();
       const btn = regForm.querySelector('button[type="submit"]');
       const originalText = btn.innerHTML;
+
+      // Honeypot 检查
+      const honeypot = document.getElementById('regHoneypot');
+      if (honeypot && honeypot.value) {
+        regMsg.textContent = '报名提交成功！我们会尽快与你联系。';
+        regMsg.className = 'form-message success';
+        regForm.reset();
+        return; // 静默拒绝机器人
+      }
+
+      // 频率限制: 60秒内不能重复提交
+      const lastSubmit = localStorage.getItem('gyzy_reg_last');
+      if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
+        regMsg.textContent = '提交太频繁，请60秒后再试。';
+        regMsg.className = 'form-message error';
+        return;
+      }
+
       btn.disabled = true;
       btn.innerHTML = '提交中...';
       regMsg.textContent = '';
       regMsg.className = 'form-message';
 
-      const data = {
-        name: document.getElementById('regName').value.trim(),
-        department: document.getElementById('regDept').value.trim(),
-        contact: document.getElementById('regContact').value.trim(),
-        direction: document.getElementById('regDirection').value,
-        available_time: document.getElementById('regTime').value,
-        intro: document.getElementById('regIntro').value.trim(),
-      };
+      // 字段长度限制
+      const name = document.getElementById('regName').value.trim().substring(0, 20);
+      const department = document.getElementById('regDept').value.trim().substring(0, 80);
+      const contact = document.getElementById('regContact').value.trim().substring(0, 50);
+      const direction = document.getElementById('regDirection').value;
+      const available_time = document.getElementById('regTime').value.trim().substring(0, 50);
+      const intro = document.getElementById('regIntro').value.trim().substring(0, 300);
 
-      // 基础校验
-      if (!data.name || !data.department || !data.contact) {
+      if (!name || !department || !contact) {
         regMsg.textContent = '请填写姓名、学院专业和联系方式';
         regMsg.className = 'form-message error';
         btn.disabled = false;
@@ -213,47 +229,48 @@
         return;
       }
 
+      const data = { name, department, contact, direction, available_time, intro };
       let success = false;
 
-      if (isSupabaseConfigured()) {
-        try {
-          const sb = getSupabase();
-          if (sb) {
-            const { error } = await sb.from('applications').insert([data]);
-            if (!error) success = true;
-          }
-        } catch (err) {
-          console.error('提交失败', err);
-        }
-      }
-
-      // 无论是否连接 Supabase，formsubmit 作为备份
+      // Supabase 直连
       try {
-        const formData = new FormData();
-        Object.keys(data).forEach(function (k) { formData.append(k, data[k]); });
-        await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
+        const res = await fetch('https://pzyijmgcksmyagdvdgoq.supabase.co/rest/v1/applications', {
           method: 'POST',
-          headers: { 'Accept': 'application/json' },
-          body: formData,
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) success = true;
+      } catch (err) { /* 网络错误 */ }
+
+      // 邮箱备份
+      try {
+        const fd = new FormData();
+        Object.keys(data).forEach(function(k) { fd.append(k, data[k]); });
+        await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
+          method: 'POST', headers: { 'Accept': 'application/json' }, body: fd,
         });
         success = true;
       } catch (err) { /* formsubmit 失败不影响 */ }
 
       if (success) {
+        localStorage.setItem('gyzy_reg_last', Date.now());
         regMsg.textContent = '报名提交成功！我们会尽快与你联系。';
         regMsg.className = 'form-message success';
         regForm.reset();
       } else {
-        regMsg.textContent = '提交失败，请稍后重试。';
+        regMsg.textContent = '网络异常，请稍后重试或直接发送邮件至 chenxuanzai107@gmail.com';
         regMsg.className = 'form-message error';
       }
-
       btn.disabled = false;
       btn.innerHTML = originalText;
     });
   }
 
-  /* ====== 留言表单提交 ====== */
+  /* ====== 留言表单提交 (含防刷) ====== */
   const fbForm = document.getElementById('feedbackForm');
   const fbMsg = document.getElementById('fbMessage');
 
@@ -262,18 +279,34 @@
       e.preventDefault();
       const btn = fbForm.querySelector('button[type="submit"]');
       const originalText = btn.innerHTML;
+
+      // Honeypot
+      const honeypot = document.getElementById('fbHoneypot');
+      if (honeypot && honeypot.value) {
+        fbMsg.textContent = '留言提交成功！感谢你的反馈。';
+        fbMsg.className = 'form-message success';
+        fbForm.reset();
+        return;
+      }
+
+      // 频率限制
+      const lastSubmit = localStorage.getItem('gyzy_fb_last');
+      if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
+        fbMsg.textContent = '提交太频繁，请60秒后再试。';
+        fbMsg.className = 'form-message error';
+        return;
+      }
+
       btn.disabled = true;
       btn.innerHTML = '提交中...';
       fbMsg.textContent = '';
       fbMsg.className = 'form-message';
 
-      const data = {
-        name: document.getElementById('fbName').value.trim(),
-        contact: document.getElementById('fbContact').value.trim(),
-        content: document.getElementById('fbContent').value.trim(),
-      };
+      const name = document.getElementById('fbName').value.trim().substring(0, 20);
+      const contact = document.getElementById('fbContact').value.trim().substring(0, 50);
+      const content = document.getElementById('fbContent').value.trim().substring(0, 500);
 
-      if (!data.name || !data.content) {
+      if (!name || !content) {
         fbMsg.textContent = '请填写姓名和留言内容';
         fbMsg.className = 'form-message error';
         btn.disabled = false;
@@ -281,26 +314,25 @@
         return;
       }
 
+      const data = { name, contact, content };
       let success = false;
 
-      if (isSupabaseConfigured()) {
-        try {
-          const sb = getSupabase();
-          if (sb) {
-            const { error } = await sb.from('messages').insert([data]);
-            if (!error) success = true;
-          }
-        } catch (err) {
-          console.error('提交失败', err);
-        }
-      }
+      try {
+        const res = await fetch('https://pzyijmgcksmyagdvdgoq.supabase.co/rest/v1/messages', {
+          method: 'POST',
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) success = true;
+      } catch (err) { /* 网络错误 */ }
 
-      // formsubmit 备份
       try {
         const fd = new FormData();
-        fd.append('name', data.name);
-        fd.append('contact', data.contact);
-        fd.append('content', data.content);
+        fd.append('name', name); fd.append('contact', contact); fd.append('content', content);
         await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
           method: 'POST', headers: { 'Accept': 'application/json' }, body: fd,
         });
@@ -308,11 +340,12 @@
       } catch (err) { /* 静默失败 */ }
 
       if (success) {
+        localStorage.setItem('gyzy_fb_last', Date.now());
         fbMsg.textContent = '留言提交成功！感谢你的反馈。';
         fbMsg.className = 'form-message success';
         fbForm.reset();
       } else {
-        fbMsg.textContent = '提交失败，请稍后重试。';
+        fbMsg.textContent = '网络异常，请稍后重试或直接发送邮件至 chenxuanzai107@gmail.com';
         fbMsg.className = 'form-message error';
       }
       btn.disabled = false;
