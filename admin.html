@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>管理后台 | 建工青协</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="admin-layout">
+  <!-- 侧边栏 -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-brand">建工青协</div>
+    <nav class="admin-nav">
+      <div class="admin-nav-item active" data-tab="dashboard">
+        <span class="admin-nav-icon">📊</span><span>仪表盘</span>
+      </div>
+      <div class="admin-nav-item" data-tab="applications">
+        <span class="admin-nav-icon">📋</span><span>报名管理</span>
+      </div>
+      <div class="admin-nav-item" data-tab="messages">
+        <span class="admin-nav-icon">💬</span><span>留言管理</span>
+      </div>
+      <div class="admin-nav-item" data-tab="activities">
+        <span class="admin-nav-icon">📅</span><span>活动管理</span>
+      </div>
+      <div class="admin-nav-item" data-tab="stats">
+        <span class="admin-nav-icon">📈</span><span>统计管理</span>
+      </div>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <button id="logoutBtn" class="btn btn-outline btn-sm" style="width:100%;color:#fff;border-color:rgba(255,255,255,0.2);">
+        🚪 退出登录
+      </button>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>管理后台</h1>
+      <div class="admin-topbar-right">
+        <span id="adminUserEmail">管理员</span>
+        <a href="index.html" class="btn btn-outline btn-sm" title="返回前台">🏠 前台</a>
+      </div>
+    </header>
+
+    <div class="admin-content" id="adminContent">
+      <div class="admin-loading">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 主内容由 JS 动态渲染 -->
+<div id="app" style="display:none;"></div>
+
+<!-- Supabase SDK + All JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
