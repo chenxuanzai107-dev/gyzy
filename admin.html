@@ -344,8 +344,17 @@
       });
       document.getElementById('actTable').querySelectorAll('.edit-btn').forEach(function(b) {
         b.addEventListener('click', function() {
-          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { headers: headers() })
-            .then(function(r){ return r.json(); }).then(function(d){ if(d[0]) showActForm(d[0], load); });
+          var id = this.getAttribute('data-id');
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+id, { headers: headers() })
+            .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+            .then(function(d){
+              if(d && d[0]) showActForm(d[0], load);
+              else alert('未找到该活动');
+            })
+            .catch(function(e){
+              console.error('编辑活动出错:', e);
+              alert('获取活动数据失败: ' + (e.message || ''));
+            });
         });
       });
       document.getElementById('actTable').querySelectorAll('[data-del]').forEach(function(b) {
@@ -387,7 +396,10 @@
       var url = isEdit ? SUPABASE_URL+'/rest/v1/activities?id=eq.'+act.id : SUPABASE_URL+'/rest/v1/activities';
       var method = isEdit ? 'PATCH' : 'POST';
       if (!isEdit) { d.show_on_home = true; d.is_published = true; }
-      fetch(url, { method: method, headers: headers(), body: JSON.stringify(d) }).then(function() { overlay.remove(); cb(); loadDashboard(); });
+      fetch(url, { method: method, headers: headers(), body: JSON.stringify(d) })
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); })
+        .then(function() { overlay.remove(); cb(); refreshDashboardIfVisible(); })
+        .catch(function(e){ alert('保存失败: ' + (e.message || '')); });
     });
     function inp(id, label, val, type) { return '<div class="form-group"><label>' + label + '</label><input id="' + id + '" value="' + e(val) + '"' + (type ? ' type="' + type + '"' : '') + '></div>'; }
     function gv(id) { var el = document.getElementById(id); return el ? el.value : ''; }
