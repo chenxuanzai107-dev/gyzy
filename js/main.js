@@ -234,11 +234,14 @@
       }
 
       // 频率限制: 60秒内不能重复提交
-      const lastSubmit = localStorage.getItem('gyzy_reg_last');
-      if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
-        regMsg.textContent = '提交太频繁，请60秒后再试。';
-        regMsg.className = 'form-message error';
-        return;
+      var lastReg = localStorage.getItem('gyzy_reg_last');
+      if (lastReg) {
+        var remain = 60 - Math.floor((Date.now() - parseInt(lastReg)) / 1000);
+        if (remain > 0) {
+          regMsg.textContent = '提交太频繁，请 ' + remain + ' 秒后再试。';
+          regMsg.className = 'form-message error';
+          return;
+        }
       }
 
       btn.disabled = true;
@@ -322,11 +325,14 @@
       }
 
       // 频率限制
-      const lastSubmit = localStorage.getItem('gyzy_fb_last');
-      if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
-        fbMsg.textContent = '提交太频繁，请60秒后再试。';
-        fbMsg.className = 'form-message error';
-        return;
+      var lastFb = localStorage.getItem('gyzy_fb_last');
+      if (lastFb) {
+        var remainFb = 60 - Math.floor((Date.now() - parseInt(lastFb)) / 1000);
+        if (remainFb > 0) {
+          fbMsg.textContent = '提交太频繁，请 ' + remainFb + ' 秒后再试。';
+          fbMsg.className = 'form-message error';
+          return;
+        }
       }
 
       btn.disabled = true;
@@ -384,4 +390,11 @@
       btn.innerHTML = originalText;
     });
   }
+
+  // 调试: 清除提交冷却
+  window.clearSubmitCooldown = function() {
+    localStorage.removeItem('gyzy_reg_last');
+    localStorage.removeItem('gyzy_fb_last');
+    console.log('提交冷却已清除');
+  };
 })();
