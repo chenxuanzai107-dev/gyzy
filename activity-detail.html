@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>活动详情 | 建工青协</title>
+<meta name="description" content="广东石油化工学院建筑工程学院青年志愿者协会活动详情">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://chenxuanzai107-dev.github.io/gyzy/activity-detail.html">
+<meta property="og:title" content="活动详情 | 建工青协">
+<meta property="og:description" content="广东石油化工学院建筑工程学院青年志愿者协会">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://chenxuanzai107-dev.github.io/gyzy/activity-detail.html">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .detail-page { padding-top: calc(var(--nav-height) + 32px); padding-bottom: var(--section-gap); min-height: 100vh; background: var(--color-bg); }
+  .detail-container { max-width: 800px; margin: 0 auto; padding: 0 var(--content-padding); }
+  .detail-header { margin-bottom: 28px; }
+  .detail-category { display: inline-block; padding: 4px 14px; border-radius: 999px; background: var(--color-bg-alt); color: var(--color-fg-muted); font-size: 13px; font-weight: 600; margin-bottom: 12px; border: 1px solid var(--color-border); }
+  .detail-header h1 { font-size: clamp(24px, 4vw, 40px); color: var(--color-fg); margin-bottom: 16px; }
+  .detail-meta { display: flex; flex-wrap: wrap; gap: 20px; color: var(--color-fg-muted); font-size: 14px; margin-bottom: 24px; }
+  .detail-meta span { display: flex; align-items: center; gap: 6px; }
+  .detail-cover { border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 28px; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), #FCD34D); min-height: 240px; display: flex; align-items: center; justify-content: center; }
+  .detail-cover img { width: 100%; height: auto; max-height: 400px; object-fit: cover; display: block; }
+  .detail-cover-placeholder { color: #fff; font-size: clamp(18px, 2vw, 28px); font-family: var(--font-heading); font-weight: 600; padding: 40px; text-align: center; }
+  .detail-content { background: var(--color-bg-card); border-radius: var(--radius-lg); padding: clamp(24px, 3vw, 40px); border: 1px solid var(--color-border); line-height: 1.9; font-size: clamp(15px, 1.3vw, 17px); color: var(--color-fg); }
+  .detail-content p { margin-bottom: 16px; }
+  .detail-back { display: inline-flex; align-items: center; gap: 6px; margin-top: 28px; color: var(--color-accent); font-weight: 600; font-size: 15px; }
+  .detail-back:hover { color: var(--color-accent-hover); }
+  .detail-error { text-align: center; padding: 80px 20px; }
+  .detail-error h2 { font-size: 24px; color: var(--color-fg); margin-bottom: 12px; }
+  .detail-error p { color: var(--color-fg-muted); margin-bottom: 24px; }
+  @media (max-width: 768px) {
+    .detail-meta { gap: 12px; }
+    .detail-cover { min-height: 180px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">跳转到主内容</a>
+
+<nav class="navbar" id="navbar" aria-label="主导航">
+  <div class="container">
+    <a href="index.html" class="nav-logo" aria-label="建工青协首页">
+      <span class="nav-logo-icon" aria-hidden="true">&#9825;</span>
+      <span>建工青协</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html#about">关于我们</a></li>
+      <li><a href="index.html#activities">活动风采</a></li>
+      <li><a href="index.html#apply">加入我们</a></li>
+      <li><a href="index.html#feedback">留言反馈</a></li>
+      <li><a href="index.html#contact">联系我们</a></li>
+    </ul>
+    <button class="nav-btn" id="navBtn" aria-label="打开菜单" aria-expanded="false" aria-controls="navLinks">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main id="main" class="detail-page">
+  <div class="detail-container" id="detailContainer">
+    <div style="text-align:center;padding:60px 20px;color:var(--color-fg-muted);">加载中...</div>
+  </div>
+</main>
+
+<footer class="footer" id="footer">
+  <div class="container">
+    <p class="footer-brand">建工青协</p>
+    <p>广东石油化工学院建筑工程学院青年志愿者协会</p>
+    <p>地址：广东省茂名市茂南区官渡二路139号 &nbsp;|&nbsp; 邮编：525000</p>
+    <p class="footer-copy">&copy; 2026 建工青协. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
+  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get('id');
+  var container = document.getElementById('detailContainer');
+
+  if (!id) {
+    container.innerHTML = '<div class="detail-error"><h2>缺少活动参数</h2><p>请从活动列表进入此页面</p><a href="index.html" class="btn btn-primary">返回首页</a></div>';
+  } else {
+    fetch(SUPABASE_URL + '/rest/v1/activities?id=eq.' + id + '&is_published=eq.true', {
+      headers: { 'apikey': ANON_KEY }
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(data) {
+      if (!data || !data.length) {
+        container.innerHTML = '<div class="detail-error"><h2>活动不存在或已下架</h2><p>该活动可能已被移除或尚未发布</p><a href="index.html" class="btn btn-primary">返回首页</a></div>';
+        return;
+      }
+      renderDetail(data[0]);
+    }).catch(function(e) {
+      console.error('详情加载失败:', e);
+      container.innerHTML = '<div class="detail-error"><h2>加载失败</h2><p>活动详情加载失败，请稍后重试</p><a href="index.html" class="btn btn-primary">返回首页</a></div>';
+    });
+  }
+
+  function renderDetail(a) {
+    document.title = esc(a.title) + ' | 建工青协活动详情';
+
+    var coverHtml;
+    if (a.cover_image) {
+      coverHtml = '<img src="' + esc(a.cover_image) + '" alt="' + esc(a.title) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">'
+        + '<div class="detail-cover-placeholder" style="display:none">' + esc(a.category || '') + '</div>';
+    } else {
+      coverHtml = '<div class="detail-cover-placeholder">' + esc(a.category || '') + '</div>';
+    }
+
+    var content = a.detail_content || a.description || '暂无详细介绍';
+
+    container.innerHTML =
+      '<div class="detail-header">'
+      + '<span class="detail-category">' + esc(a.category || '') + '</span>'
+      + '<h1>' + esc(a.title || '') + '</h1>'
+      + '<div class="detail-meta">'
+      + '<span>📅 ' + esc(a.event_date || '') + ' ' + esc(a.event_time || '') + '</span>'
+      + '<span>📍 ' + esc(a.location || '待定') + '</span>'
+      + '<span>👥 ' + (a.participants || 0) + ' 人</span>'
+      + '<span>⏱ ' + (a.service_hours || 0) + ' 小时</span>'
+      + '</div></div>'
+      + '<div class="detail-cover">' + coverHtml + '</div>'
+      + '<div class="detail-content">' + content.split('\n').map(function(p){ return '<p>' + esc(p) + '</p>'; }).join('') + '</div>'
+      + '<a href="index.html" class="detail-back">&larr; 返回首页</a>';
+  }
+})();
+</script>
+</body>
+</html>

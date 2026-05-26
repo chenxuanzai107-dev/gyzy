@@ -158,7 +158,7 @@
         var colors = categoryColors[a.category] || ['#F59E0B', '#FCD34D'];
         imgHtml = '<div class="activity-img-placeholder" style="background:linear-gradient(135deg,' + colors[0] + ',' + colors[1] + ')">' + esc(a.category || '') + '</div>';
       }
-      return '<article class="activity-card reveal">'
+      return '<a href="activity-detail.html?id=' + (a.id || '') + '" class="activity-card reveal" style="display:block;">'
         + '<div class="activity-img">' + imgHtml
         + '<span class="activity-category-tag">' + esc(a.category || '') + '</span></div>'
         + '<div class="activity-body">'
@@ -170,7 +170,8 @@
         + '<span>👥 ' + (a.participants || 0) + '人</span>'
         + '<span>⏱ ' + (a.service_hours || a.serviceHours || 0) + '小时</span></div>'
         + '<p>' + esc(a.description || '') + '</p>'
-        + '</div></article>';
+        + '<span style="display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:var(--color-accent);">查看详情 &rarr;</span>'
+        + '</div></a>';
     }).join('');
     container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
   }

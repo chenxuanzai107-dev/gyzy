@@ -380,6 +380,7 @@
       + inp('afHours', '服务时长(h)', act?.service_hours, 'number')
       + inp('afImg', '封面图URL', act?.cover_image)
       + '<div class="form-group"><label>简介</label><textarea id="afDesc" rows="3">' + e(act?.description) + '</textarea></div>'
+      + '<div class="form-group"><label>详细内容</label><textarea id="afDetail" rows="5">' + e(act?.detail_content) + '</textarea></div>'
       + '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">'
       + '<button class="btn btn-outline btn-sm" id="cancelAf">取消</button><button class="btn btn-primary btn-sm" id="saveAf">保存</button></div></div>';
     document.body.appendChild(overlay);
@@ -390,7 +391,7 @@
         title: gv('afTitle'), category: gv('afCat'), event_date: gv('afDate'),
         event_time: gv('afTime'), location: gv('afLoc'),
         participants: parseInt(gv('afParts'))||0, service_hours: parseInt(gv('afHours'))||0,
-        cover_image: gv('afImg'), description: gv('afDesc')
+        cover_image: gv('afImg'), description: gv('afDesc'), detail_content: gv('afDetail')
       };
       if (!d.title) { alert('请输入标题'); return; }
       var url = isEdit ? SUPABASE_URL+'/rest/v1/activities?id=eq.'+act.id : SUPABASE_URL+'/rest/v1/activities';
