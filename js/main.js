@@ -91,6 +91,23 @@
   var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
   var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
 
+  // 加载首页 Hero Banner 图片
+  (function loadHeroImage() {
+    var hero = document.querySelector('.hero-banner');
+    if (!hero) return;
+    fetch(SUPABASE_URL + '/rest/v1/site_settings?select=value&key=eq.hero_image_url', {
+      headers: { 'apikey': ANON_KEY }
+    }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data[0] && data[0].value) {
+          hero.style.backgroundImage = 'url(' + data[0].value + ')';
+          // 把遮罩层放在图片上面
+          hero.style.position = 'relative';
+        }
+      })
+      .catch(function() { /* 使用默认渐变背景 */ });
+  })();
+
   async function loadStats() {
     var statsContainer = document.getElementById('statsContainer');
     if (!statsContainer) return;
