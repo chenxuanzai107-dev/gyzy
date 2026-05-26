@@ -175,7 +175,7 @@
     container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
   }
 
-  function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   loadActivities();
 
   /* ====== 报名表单提交 (含防刷) ====== */

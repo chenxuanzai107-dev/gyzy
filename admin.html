@@ -425,7 +425,7 @@
       });
   }
 
-  function e(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function e(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function fmtDate(d) { return d ? new Date(d).toLocaleDateString('zh-CN') : ''; }
 
   // ====== 登出 ======
