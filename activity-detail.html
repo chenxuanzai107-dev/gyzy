@@ -12,91 +12,73 @@
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://chenxuanzai107-dev.github.io/gyzy/activity-detail.html">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260527">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=detail-fix">
 <style>
-  .detail-body { background: var(--color-bg); min-height: 100vh; }
-  .detail-banner { height: clamp(180px, 25vw, 280px); background: linear-gradient(135deg, #1a0a08, #6b201a); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-  .detail-banner::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 32px 32px; }
-  .detail-banner h1 { color: #fff; font-size: clamp(22px, 3vw, 36px); position: relative; z-index: 1; padding: 0 24px; text-align: center; }
-  .detail-main { padding-block: 28px; }
-  .detail-cover-wrap { border-radius: 4px; overflow: hidden; margin-bottom: 24px; background: linear-gradient(135deg, var(--color-primary), #8B1A15); min-height: 240px; display: flex; align-items: center; justify-content: center; }
-  .detail-cover-wrap img { width: 100%; max-height: 400px; object-fit: cover; display: block; }
-  .detail-cover-wrap .placeholder { color: #fff; font-size: 18px; font-weight: 600; padding: 40px; text-align: center; }
-  .detail-meta-row { display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px; color: var(--color-fg-muted); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px dashed var(--color-border); }
-  .detail-meta-row span { display: flex; align-items: center; gap: 4px; }
-  .detail-content { line-height: 2; font-size: 15px; }
-  .detail-content p { margin-bottom: 16px; text-indent: 2em; }
-  .detail-back { display: inline-flex; align-items: center; gap: 4px; margin-top: 24px; color: var(--color-primary); font-weight: 600; font-size: 14px; }
-  .detail-back:hover { text-decoration: underline; }
-  .detail-error { text-align: center; padding: 80px 20px; }
-  .detail-error h2 { font-size: 22px; color: var(--color-fg); margin-bottom: 10px; }
-  .detail-error p { color: var(--color-fg-muted); margin-bottom: 20px; }
-  @media (max-width: 768px) {
-    .detail-meta-row { gap: 12px; }
-    .detail-cover-wrap { min-height: 180px; }
-  }
+  .detail-page-body{background:var(--bg);min-height:100vh}
+  .detail-page-main{padding:clamp(28px,4vw,44px) 0}
+  .detail-card{max-width:900px;margin:0 auto;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:clamp(24px,3.5vw,44px);box-shadow:0 8px 24px rgba(0,0,0,.04)}
+  .detail-topline{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .detail-cat{display:inline-flex;padding:4px 12px;border-radius:99px;background:rgba(159,29,20,.07);color:var(--red);font-size:12px;font-weight:600}
+  .detail-card h1{margin:0 0 16px;font-size:clamp(24px,3.5vw,36px);line-height:1.35;font-family:var(--font-serif);font-weight:700;color:var(--text)}
+  .detail-meta{display:flex;flex-wrap:wrap;gap:10px 18px;padding-bottom:18px;margin-bottom:22px;border-bottom:1px solid var(--border);color:var(--text-2);font-size:14px}
+  .detail-meta span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+  .detail-cover{border-radius:12px;overflow:hidden;margin-bottom:28px;background:linear-gradient(135deg,rgba(159,29,20,.9),rgba(200,166,106,.75))}
+  .detail-cover img{width:100%;max-height:480px;object-fit:cover;display:block}
+  .detail-cover .ph{color:#fff;font-size:18px;font-weight:600;padding:60px 20px;text-align:center}
+  .detail-body-text{font-size:15px;line-height:2.1;color:#333}
+  .detail-body-text p{margin-bottom:16px;text-indent:2em}
+  .detail-back{display:inline-flex;align-items:center;gap:4px;margin-top:28px;color:var(--red);font-weight:700;font-size:14px;text-decoration:none}
+  .detail-back:hover{text-decoration:underline}
+  .detail-err{text-align:center;padding:80px 20px}
+  .detail-err h2{font-size:20px;margin-bottom:8px;color:var(--text)}
+  .detail-err p{color:var(--text-2);margin-bottom:20px}
+  @media(max-width:768px){.detail-card{padding:22px 16px}.detail-card h1{font-size:22px}.detail-meta{font-size:13px;gap:8px 12px}}
 </style>
 </head>
-<body class="detail-body">
+<body class="detail-page-body">
 
 <a href="#main" class="skip-link">跳转到主内容</a>
 
-<!-- Top Bar -->
-<div class="site-top">
+<div class="top-bar">
   <div class="container">
-    <div class="site-top-left">
-      <div class="site-brand">
-        <span class="site-brand-icon" aria-hidden="true">&#9825;</span>
-        <span class="site-brand-text">建工青协</span>
-      </div>
-      <span class="site-brand-sub">广东石油化工学院 · 建筑工程学院</span>
-    </div>
-    <div class="site-top-right"></div>
+    <div class="top-logo"><span class="top-logo-icon">&#9825;</span><span class="top-logo-text">建工青协</span></div>
+    <a href="admin.html" style="color:rgba(255,255,255,.4);font-size:11px;opacity:.5;">管理</a>
   </div>
 </div>
 
-<!-- Hero Banner -->
-<div class="detail-banner">
-  <h1 id="detailBannerTitle">活动详情</h1>
-</div>
-
-<!-- Main Nav -->
-<nav class="main-nav" id="mainNav">
+<nav class="main-nav">
   <div class="container">
-    <ul class="main-nav-list">
+    <ul class="nav-list">
       <li><a href="index.html">首页</a></li>
       <li><a href="index.html#about">协会概况</a></li>
       <li><a href="index.html#organization">组织架构</a></li>
       <li><a href="index.html#activities" class="active">活动风采</a></li>
-      <li><a href="index.html#services">志愿服务</a></li>
       <li><a href="index.html#apply">加入我们</a></li>
+      <li><a href="index.html#feedback">留言反馈</a></li>
+      <li><a href="index.html#contact">联系我们</a></li>
     </ul>
   </div>
 </nav>
 
-<!-- Breadcrumb -->
 <div class="breadcrumb">
-  <div class="container">
-    <a href="index.html">首页</a> <span>&rsaquo;</span> <a href="index.html#activities">活动风采</a> <span>&rsaquo;</span> <span>活动详情</span>
-  </div>
+  <div class="container"><a href="index.html">首页</a> &rsaquo; <a href="index.html#activities">活动风采</a> &rsaquo; <span>活动详情</span></div>
 </div>
 
-<main id="main" class="detail-main">
+<main id="main" class="detail-page-main">
   <div class="container">
-    <div class="content-main" id="detailContainer">
-      <p style="text-align:center;padding:40px;color:var(--color-fg-muted);">加载中...</p>
+    <div class="detail-card" id="detailContainer">
+      <p style="text-align:center;color:var(--text-2);padding:40px;">加载中...</p>
     </div>
   </div>
 </main>
 
-<!-- Footer -->
 <footer class="site-footer">
   <div class="container">
-    <p class="site-footer-brand">建工青协</p>
+    <p class="brand">建工青协</p>
     <p>广东石油化工学院建筑工程学院青年志愿者协会</p>
     <p>地址：广东省茂名市茂南区官渡二路139号</p>
-    <p class="site-footer-copy">&copy; 2026 建工青协</p>
+    <p class="copy">&copy; 2026 建工青协</p>
   </div>
 </footer>
 
@@ -105,48 +87,46 @@
   'use strict';
   var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
   var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
-  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  var params = new URLSearchParams(window.location.search);
-  var id = params.get('id');
-  var container = document.getElementById('detailContainer');
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(v) { if(!v) return ''; var d=new Date(v); if(isNaN(d.getTime())) return v; return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+  var p = new URLSearchParams(window.location.search);
+  var id = p.get('id');
+  var c = document.getElementById('detailContainer');
 
   if (!id) {
-    container.innerHTML = '<div class="detail-error"><h2>缺少活动参数</h2><p>请从活动列表进入此页面</p><a href="index.html" class="btn btn-primary">返回首页</a></div>';
+    c.innerHTML = '<div class="detail-err"><h2>缺少活动ID</h2><p>请从活动列表进入</p><a href="index.html" class="btn btn-red">返回首页</a></div>';
   } else {
     fetch(SUPABASE_URL + '/rest/v1/activities?id=eq.' + id + '&is_published=eq.true', { headers: { 'apikey': ANON_KEY } })
       .then(function(r) { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
       .then(function(data) {
-        if (!data || !data.length) {
-          container.innerHTML = '<div class="detail-error"><h2>活动不存在或已下架</h2><p>该活动可能已被移除</p><a href="index.html" class="btn btn-primary">返回首页</a></div>';
-        } else { renderDetail(data[0]); }
+        if (!data || !data.length) { c.innerHTML = '<div class="detail-err"><h2>活动不存在或已下架</h2><p>该活动可能已被移除</p><a href="index.html" class="btn btn-red">返回首页</a></div>'; return; }
+        var a = data[0];
+        document.title = esc(a.title) + ' | 建工青协';
+
+        var coverHtml = a.cover_image
+          ? '<img src="' + esc(a.cover_image) + '" alt="' + esc(a.title) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';"><div class="ph" style="display:none">' + esc(a.category||'建工青协') + '</div>'
+          : '<div class="ph">' + esc(a.category||'建工青协') + '</div>';
+
+        var body = a.detail_content || a.description || '暂无详细介绍';
+
+        c.innerHTML =
+          '<div class="detail-topline"><span class="detail-cat">' + esc(a.category||'') + '</span></div>'
+          + '<h1>' + esc(a.title||'') + '</h1>'
+          + '<div class="detail-meta">'
+          + '<span>📅 ' + fmtDate(a.date||a.event_date) + (a.time||a.event_time?' '+esc(a.time||a.event_time):'') + '</span>'
+          + '<span>📍 ' + esc(a.location||'待定') + '</span>'
+          + '<span>👥 ' + (a.volunteers_count ?? a.participants ?? 0) + '人</span>'
+          + '<span>⏱ ' + (a.service_hours || 0) + 'h</span>'
+          + '</div>'
+          + '<div class="detail-cover">' + coverHtml + '</div>'
+          + '<div class="detail-body-text">' + body.split('\n').filter(Boolean).map(function(p){return '<p>'+esc(p)+'</p>';}).join('') + '</div>'
+          + '<a href="index.html#activities" class="detail-back">&larr; 返回活动风采</a>';
       })
       .catch(function() {
-        container.innerHTML = '<div class="detail-error"><h2>加载失败</h2><p>请稍后重试</p><a href="index.html" class="btn btn-primary">返回首页</a></div>';
+        c.innerHTML = '<div class="detail-err"><h2>加载失败</h2><p>请稍后重试</p><a href="index.html" class="btn btn-red">返回首页</a></div>';
       });
-  }
-
-  function renderDetail(a) {
-    document.title = esc(a.title) + ' | 建工青协';
-    document.getElementById('detailBannerTitle').textContent = a.title || '活动详情';
-
-    var coverHtml = a.cover_image
-      ? '<img src="' + esc(a.cover_image) + '" alt="' + esc(a.title) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';"><span class="placeholder" style="display:none">' + esc(a.category || '') + '</span>'
-      : '<span class="placeholder">' + esc(a.category || '活动封面') + '</span>';
-
-    var content = a.detail_content || a.description || '暂无详细介绍';
-
-    container.innerHTML =
-      '<div class="detail-cover-wrap">' + coverHtml + '</div>'
-      + '<span class="activity-category-tag" style="margin-bottom:12px;">' + esc(a.category || '') + '</span>'
-      + '<div class="detail-meta-row">'
-      + '<span>📅 ' + esc(a.event_date || '') + ' ' + esc(a.event_time || '') + '</span>'
-      + '<span>📍 ' + esc(a.location || '待定') + '</span>'
-      + '<span>👥 ' + (a.participants || 0) + ' 人</span>'
-      + '<span>⏱ ' + (a.service_hours || 0) + ' 小时</span>'
-      + '</div>'
-      + '<div class="detail-content">' + content.split('\n').map(function(p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div>'
-      + '<a href="index.html#activities" class="detail-back">&larr; 返回活动列表</a>';
   }
 })();
 </script>
