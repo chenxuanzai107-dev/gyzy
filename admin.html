@@ -601,36 +601,38 @@
             });
 
             if (!upRes.ok) {
-              var errData = await upRes.json().catch(function(){ return {}; });
+              var errText = await upRes.text();
+              var errData = {};
+              try { if (errText) errData = JSON.parse(errText); } catch(e) {}
               console.error('Storage upload error:', upRes.status, errData);
-              throw new Error(errData.message || errData.error || 'Storage 上传失败 (HTTP ' + upRes.status + ')');
+              throw new Error((errData.message || errData.error) || ('图片上传失败 (HTTP ' + upRes.status + ')'));
             }
 
             var publicUrl = SUPABASE_URL + '/storage/v1/object/public/site-assets/' + fname;
-            console.log('Uploaded:', publicUrl);
 
-            // 2. Save to site_settings
+            // 2. Save to site_settings - try upsert via POST then PATCH if duplicate
             msgEl.textContent = '正在保存设置...';
-            var saveRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings?key=eq.hero_image_url', {
-              method: 'PATCH',
-              headers: headers(),
+
+            // First try POST (insert)
+            var saveRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings', {
+              method: 'POST', headers: headers(),
               body: JSON.stringify({ key: 'hero_image_url', value: publicUrl })
             });
 
-            // If PATCH didn't update anything (row doesn't exist), use POST
-            if (saveRes.ok) {
-              var patched = await saveRes.json();
-              if (!patched || patched.length === 0) {
-                // Row doesn't exist, create it
-                await fetch(SUPABASE_URL + '/rest/v1/site_settings', {
-                  method: 'POST', headers: headers(),
-                  body: JSON.stringify({ key: 'hero_image_url', value: publicUrl })
-                });
-              }
-            } else {
-              var saveErr = await saveRes.json().catch(function(){ return {}; });
-              console.error('site_settings save error:', saveRes.status, saveErr);
-              throw new Error(saveErr.message || '设置保存失败 (HTTP ' + saveRes.status + ')');
+            // If duplicate key, try PATCH (update)
+            if (!saveRes.ok && saveRes.status === 409) {
+              saveRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings?key=eq.hero_image_url', {
+                method: 'PATCH', headers: headers(),
+                body: JSON.stringify({ value: publicUrl })
+              });
+            }
+
+            if (!saveRes.ok) {
+              var seText = await saveRes.text();
+              var seErr = {};
+              try { if (seText) seErr = JSON.parse(seText); } catch(e) {}
+              console.error('site_settings save error:', saveRes.status, seErr);
+              throw new Error((seErr.message || seErr.error) || ('设置保存失败 (HTTP ' + saveRes.status + ')'));
             }
 
             msgEl.textContent = '首页 Banner 已更新！刷新前台首页即可看到新图片。';
