@@ -138,21 +138,34 @@
     var container = document.getElementById('activitiesGrid');
     if (!container) return;
 
+    // 8秒超时回退，避免永久"加载中"
+    var loaded = false;
+    setTimeout(function() {
+      if (!loaded) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-2);padding:24px;">暂无活动内容</p>';
+      }
+    }, 8000);
+
     try {
       var res = await fetch(SUPABASE_URL + '/rest/v1/activities?show_on_home=eq.true&is_published=eq.true&order=event_date.desc', {
         headers: { 'apikey': ANON_KEY }
       });
       if (res.ok) {
         var data = await res.json();
-        if (data && data.length > 0) { renderActivities(container, data); return; }
+        if (data && data.length > 0) { loaded = true; renderActivities(container, data); return; }
       }
-    } catch (e) { /* 回退 */ }
+    } catch (e) { console.error('Activities fetch error:', e); }
+
     // 离线: JSON
     try {
       var r2 = await fetch('data/activities.json');
-      renderActivities(container, await r2.json());
+      var jd = await r2.json();
+      loaded = true;
+      renderActivities(container, jd);
     } catch (e) {
-      container.innerHTML = '<p style="text-align:center;color:var(--color-fg-muted);padding:40px;">活动数据加载中...</p>';
+      if (!loaded) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-2);padding:24px;">暂无活动内容</p>';
+      }
     }
   }
 
