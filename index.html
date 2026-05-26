@@ -4,314 +4,304 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>建工青协 — 广东石油化工学院建筑工程学院青年志愿者协会</title>
-<meta name="description" content="广东石油化工学院建筑工程学院青年志愿者协会（建工青协），汇聚青春力量，践行志愿精神。加入我们，用行动传递温暖与关爱。">
-<meta name="keywords" content="建工青协,广东石油化工学院,建筑工程学院,青年志愿者协会,志愿服务,支教,社区服务,茂名">
+<meta name="description" content="广东石油化工学院建筑工程学院青年志愿者协会（建工青协）官方网站。奉献、友爱、互助、进步。">
+<meta name="keywords" content="建工青协,广东石油化工学院,建筑工程学院,青年志愿者协会,志愿服务">
 <meta name="author" content="建工青协">
 <link rel="canonical" href="https://chenxuanzai107-dev.github.io/gyzy/">
 <meta property="og:title" content="建工青协 — 广东石油化工学院建筑工程学院青年志愿者协会">
-<meta property="og:description" content="汇聚青春力量，践行志愿精神。加入建工青协，用行动传递温暖与关爱。">
+<meta property="og:description" content="汇聚青春力量，践行志愿精神。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://chenxuanzai107-dev.github.io/gyzy/">
 <meta property="og:image" content="https://chenxuanzai107-dev.github.io/gyzy/assets/images/og-image.png">
-<meta property="og:image:alt" content="建工青协 — 用青春点亮志愿之光">
+<meta property="og:image:alt" content="建工青协">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="建工青协 — 建筑工程学院青年志愿者协会">
+<meta name="twitter:title" content="建工青协">
 <meta name="twitter:description" content="汇聚青春力量，践行志愿精神。">
-<meta name="twitter:image" content="https://chenxuanzai107-dev.github.io/gyzy/assets/images/og-image.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <a href="#main" class="skip-link">跳转到主内容</a>
 
-<!-- ====== NAVBAR ====== -->
-<nav class="navbar" id="navbar" aria-label="主导航">
+<!-- ====== TOP BAR ====== -->
+<div class="site-top">
   <div class="container">
-    <a href="index.html" class="nav-logo" aria-label="建工青协首页">
-      <span class="nav-logo-icon" aria-hidden="true">&#9825;</span>
-      <span>建工青协</span>
-    </a>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="#about">关于我们</a></li>
+    <div class="site-top-left">
+      <div class="site-brand">
+        <span class="site-brand-icon" aria-hidden="true">&#9825;</span>
+        <span class="site-brand-text">建工青协</span>
+      </div>
+      <span class="site-brand-sub">广东石油化工学院 · 建筑工程学院</span>
+    </div>
+    <div class="site-top-right">
+      <div class="site-search">
+        <input type="text" id="siteSearchInput" placeholder="站内搜索...">
+        <button id="siteSearchBtn" aria-label="搜索">🔍</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== HERO BANNER ====== -->
+<section class="hero-banner" aria-labelledby="heroTitle">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1 id="heroTitle">广东石油化工学院<span>建筑工程学院</span>青年志愿者协会</h1>
+    <p>奉献 · 友爱 · 互助 · 进步 &nbsp;|&nbsp; 用青春点亮志愿之光</p>
+    <div class="hero-cta">
+      <a href="#apply" class="btn btn-primary btn-lg">加入我们</a>
+      <a href="#about" class="btn btn-light btn-lg">了解更多</a>
+    </div>
+  </div>
+</section>
+
+<!-- ====== MAIN NAVIGATION ====== -->
+<nav class="main-nav" id="mainNav" aria-label="主导航">
+  <div class="container">
+    <ul class="main-nav-list" id="mainNavList">
+      <li><a href="index.html" class="active">首页</a></li>
+      <li><a href="#about">协会概况</a></li>
+      <li><a href="#organization">组织架构</a></li>
       <li><a href="#activities">活动风采</a></li>
-      <li><a href="#join">加入我们</a></li>
+      <li><a href="#services">志愿服务</a></li>
+      <li><a href="#apply">加入我们</a></li>
       <li><a href="#feedback">留言反馈</a></li>
-      <li><a href="#contact">联系我们</a></li>
     </ul>
-    <button class="nav-btn" id="navBtn" aria-label="打开菜单" aria-expanded="false" aria-controls="navLinks">
-      <span></span><span></span><span></span>
-    </button>
+    <button class="nav-toggle" id="navToggle" aria-label="菜单" aria-expanded="false">&#9776;</button>
   </div>
 </nav>
 
+<!-- ====== BREADCRUMB ====== -->
+<div class="breadcrumb" aria-label="面包屑导航">
+  <div class="container">
+    <a href="index.html">首页</a> <span>&rsaquo;</span> <span>欢迎访问</span>
+  </div>
+</div>
+
 <main id="main">
 
-<!-- ====== HERO ====== -->
-<section class="hero" aria-labelledby="heroTitle">
-  <div class="container">
-    <div class="hero-content reveal">
-      <span class="hero-badge">广东石油化工学院 · 建筑工程学院</span>
-      <h1 id="heroTitle">用青春点亮<span class="highlight">志愿之光</span></h1>
-      <p class="hero-subtitle">建筑工程学院青年志愿者协会，汇聚青春力量，践行志愿精神。我们走进社区、服务校园，用行动传递温暖与关爱。</p>
-      <div class="hero-cta">
-        <a href="#apply" class="btn btn-primary btn-lg">加入我们 <span aria-hidden="true">&rarr;</span></a>
-        <a href="#about" class="btn btn-outline btn-lg">了解更多</a>
-      </div>
-    </div>
-    <div class="hero-visual reveal" aria-hidden="true">
-      <div class="hero-blocks">
-        <div class="block block-a"></div>
-        <div class="block block-b"></div>
-        <div class="block block-c"></div>
-        <div class="block block-d"></div>
-        <div class="block block-e"></div>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- ====== PAGE LAYOUT: Sidebar + Content ====== -->
+<div class="container page-layout">
 
-<!-- ====== ABOUT + STATS ====== -->
-<section class="about" id="about" aria-labelledby="aboutTitle">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-label">About</div>
-      <h2 id="aboutTitle">关于我们</h2>
-      <p>建筑工程学院青年志愿者协会，成立于校园沃土，致力于志愿服务事业</p>
-    </div>
-    <div class="about-grid">
-      <div class="about-text reveal">
-        <h3>以志愿之名，行青春之事</h3>
-        <p>建工青协是广东石油化工学院建筑工程学院直属的志愿服务组织。我们秉承"奉献、友爱、互助、进步"的志愿精神，组织开展了敬老助残、社区服务、校园公益、支教助学等一系列活动。</p>
-        <p>每一位成员都是青春的光芒，每一次服务都是爱的传递。我们期待更多志同道合的同学加入，一起让世界更温暖。</p>
-        <div class="stats-grid reveal-stagger" id="statsContainer">
-          <!-- 默认数据: 数据库不可用时展示 -->
-          <div class="stat-card">
-            <div class="stat-number" data-count="528" data-suffix="">528</div>
-            <div class="stat-label">注册志愿者</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" data-count="86" data-suffix="">86</div>
-            <div class="stat-label">年度活动</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" data-count="3200" data-suffix="+">3200+</div>
-            <div class="stat-label">服务总时长</div>
-          </div>
-        </div>
-      </div>
-      <div class="about-visual reveal" aria-hidden="true">
-        <div class="about-visual-inner">
-          <p class="big-quote">"奉献 友爱<br>互助 进步"</p>
-          <p style="margin-top:12px;opacity:0.85;font-size:14px;">— 中国青年志愿者精神</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+  <!-- Sidebar -->
+  <aside class="side-nav" aria-label="栏目导航">
+    <div class="side-nav-title">栏目导航</div>
+    <ul class="side-nav-list">
+      <li><a href="#about">协会概况</a></li>
+      <li><a href="#organization">组织架构</a></li>
+      <li><a href="#activities">活动风采</a></li>
+      <li><a href="#services">志愿服务</a></li>
+      <li><a href="#apply">加入我们</a></li>
+      <li><a href="#feedback">留言反馈</a></li>
+      <li><a href="#contact">联系我们</a></li>
+    </ul>
+  </aside>
 
-<!-- ====== ACTIVITIES ====== -->
-<section class="activities-section" id="activities" aria-labelledby="activitiesTitle">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-label">Activities</div>
-      <h2 id="activitiesTitle">活动风采</h2>
-      <p>我们用行动诠释志愿精神，用汗水浇灌青春之花</p>
-    </div>
-    <div class="activities-grid reveal-stagger" id="activitiesGrid">
-      <!-- 动态加载 -->
-    </div>
-  </div>
-</section>
+  <!-- Main Content -->
+  <div class="content-main">
 
-<!-- ====== JOIN / 加入我们 ====== -->
-<section class="recruit-section" id="join" aria-labelledby="joinTitle">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-label">Join Us</div>
-      <h2 id="joinTitle">加入我们</h2>
-      <p>只要你有热情、有爱心，建工青协欢迎你的加入</p>
-    </div>
-
-    <!-- 招募 CTA -->
-    <div class="recruit-cta reveal">
-      <h2>一起发光</h2>
-      <p>加入建工青协，用行动传递爱与温暖</p>
-      <div class="join-steps">
-        <div class="join-step">
-          <div class="join-step-number">1</div>
-          <h4>填写报名</h4>
-          <p>在下方表单提交个人信息</p>
+    <!-- ====== ABOUT ====== -->
+    <section id="about" aria-labelledby="aboutTitle">
+      <h2 class="section-title" id="aboutTitle">协会概况</h2>
+      <div class="about-grid" style="margin-top:20px;">
+        <div class="about-text reveal">
+          <p>建工青协是广东石油化工学院建筑工程学院直属的志愿服务组织，秉承"奉献、友爱、互助、进步"的志愿精神，组织开展了敬老助残、社区服务、校园公益、支教助学等系列志愿服务活动。</p>
+          <p>协会自成立以来，累计注册志愿者超过500人，年度开展活动80余场，累计服务时长超过3200小时。每一位成员都是青春的光芒，每一次服务都是爱的传递。</p>
+          <div class="stats-row" id="statsContainer">
+            <div class="stat-item">
+              <div class="stat-number" data-count="528">528</div>
+              <div class="stat-label">注册志愿者</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" data-count="86">86</div>
+              <div class="stat-label">年度活动</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" data-count="3200" data-suffix="+">3200+</div>
+              <div class="stat-label">服务总时长</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" data-count="5000" data-suffix="+">5000+</div>
+              <div class="stat-label">服务覆盖人数</div>
+            </div>
+          </div>
         </div>
-        <div class="join-step">
-          <div class="join-step-number">2</div>
-          <h4>参加面试</h4>
-          <p>简单交流，互相了解</p>
-        </div>
-        <div class="join-step">
-          <div class="join-step-number">3</div>
-          <h4>正式加入</h4>
-          <p>通过后即可参与志愿活动</p>
+        <div class="about-visual reveal" aria-hidden="true">
+          <div class="about-visual-inner">
+            <p class="big-quote">"奉献 友爱<br>互助 进步"</p>
+            <p style="margin-top:14px;opacity:0.85;font-size:14px;">— 中国青年志愿者精神</p>
+          </div>
         </div>
       </div>
-      <div class="contact-bar">
-        <span>&#128222; 17600326088</span>
-        <span>&#9993; chenxuanzai107@gmail.com</span>
-        <span>&#127760; 微信公众号：建工青协</span>
-      </div>
-    </div>
+    </section>
 
-    <!-- 报名表单 -->
-    <div class="registration-form reveal" id="apply">
-      <!-- 防刷 honeypot -->
-      <input type="text" name="website" id="regHoneypot" style="display:none" tabindex="-1" autocomplete="off">
-      <h3>志愿者报名表</h3>
-      <form id="registrationForm" novalidate>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="regName">姓名 <span class="required">*</span></label>
-            <input type="text" id="regName" required placeholder="请输入你的姓名">
-          </div>
-          <div class="form-group">
-            <label for="regDept">学院 / 专业 / 班级 <span class="required">*</span></label>
-            <input type="text" id="regDept" required placeholder="例如：建筑工程学院土木工程2024级1班">
-          </div>
-          <div class="form-group">
-            <label for="regContact">联系方式 <span class="required">*</span></label>
-            <input type="text" id="regContact" required placeholder="手机号或微信号">
-          </div>
-          <div class="form-group">
-            <label for="regDirection">志愿服务方向</label>
-            <select id="regDirection">
-              <option value="">请选择</option>
-              <option value="社区服务">社区服务</option>
-              <option value="支教助学">支教助学</option>
-              <option value="环保公益">环保公益</option>
-              <option value="科普教育">科普教育</option>
-              <option value="爱心公益">爱心公益</option>
-              <option value="校园服务">校园服务</option>
-              <option value="其他">其他</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="regTime">可服务时间</label>
-            <input type="text" id="regTime" placeholder="例如：周末 / 周三下午 / 随时">
-          </div>
-          <div class="form-group">
-            <label for="regIntro">个人介绍</label>
-            <textarea id="regIntro" rows="2" placeholder="简单介绍自己（选填）"></textarea>
-          </div>
-        </div>
-        <div style="margin-top:16px;">
-          <button type="submit" class="btn btn-primary">提交报名 <span aria-hidden="true">&rarr;</span></button>
-          <p class="form-message" id="regMessage"></p>
-        </div>
-      </form>
-    </div>
-  </div>
-</section>
+    <!-- ====== ORGANIZATION ====== -->
+    <section id="organization" aria-labelledby="orgTitle" style="margin-top:40px;">
+      <h2 class="section-title" id="orgTitle">组织架构</h2>
+      <p class="section-subtitle">广东石油化工学院建筑工程学院青年志愿者协会部门设置</p>
+      <div class="services-grid reveal" style="margin-top:20px;">
+        <div class="service-card"><div class="service-card-icon">🏛️</div><h4>主席团</h4><p>负责协会整体统筹、发展规划、重大事项决策、部门协调与对外沟通，推动协会各项志愿服务工作有序开展。</p></div>
+        <div class="service-card"><div class="service-card-icon">📝</div><h4>秘书部</h4><p>负责协会日常事务管理、会议记录、档案整理、通知发布、物资登记和资料归档等工作。</p></div>
+        <div class="service-card"><div class="service-card-icon">📊</div><h4>组织部</h4><p>负责志愿者招募、成员管理、活动组织协调、人员安排、考勤统计和志愿服务队伍建设。</p></div>
+        <div class="service-card"><div class="service-card-icon">🚩</div><h4>行动部</h4><p>负责具体志愿服务活动的执行落地，包括现场组织、秩序维护、服务实施、活动保障和应急协调。</p></div>
+        <div class="service-card"><div class="service-card-icon">🤝</div><h4>外联部</h4><p>负责校内外资源联系、公益合作对接、活动协同、社会组织沟通及协会对外交流工作。</p></div>
+        <div class="service-card"><div class="service-card-icon">📡</div><h4>网宣部</h4><p>负责协会宣传推广、新媒体运营、活动摄影摄像、推文制作、官网内容更新和视觉形象维护。</p></div>
+      </div>
+    </section>
 
-<!-- ====== FEEDBACK ====== -->
-<section class="feedback-section" id="feedback" aria-labelledby="feedbackTitle">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-label">Feedback</div>
-      <h2 id="feedbackTitle">留言反馈</h2>
-      <p>有任何建议或问题？欢迎给我们留言</p>
-    </div>
-    <div class="feedback-form-card reveal">
-      <input type="text" name="website" id="fbHoneypot" style="display:none" tabindex="-1" autocomplete="off">
-      <form id="feedbackForm" novalidate>
-        <div class="form-group">
-          <label for="fbName">姓名 <span class="required">*</span></label>
-          <input type="text" id="fbName" required placeholder="请输入你的姓名">
-        </div>
-        <div class="form-group">
-          <label for="fbContact">联系方式 <span class="required">*</span></label>
-          <input type="text" id="fbContact" required placeholder="手机号或微信号">
-        </div>
-        <div class="form-group">
-          <label for="fbContent">留言内容 <span class="required">*</span></label>
-          <textarea id="fbContent" required rows="4" placeholder="请输入你的留言..."></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">提交留言 <span aria-hidden="true">&rarr;</span></button>
-        <p class="form-message" id="fbMessage"></p>
-      </form>
-    </div>
-  </div>
-</section>
+    <!-- ====== ACTIVITIES ====== -->
+    <section id="activities" aria-labelledby="activitiesTitle" style="margin-top:40px;">
+      <h2 class="section-title" id="activitiesTitle">活动风采</h2>
+      <div class="activities-section" id="activitiesContainer" style="margin-top:20px;border:none;padding:0;">
+        <div id="activitiesGrid"><p style="text-align:center;color:var(--color-fg-muted);padding:20px;">加载中...</p></div>
+      </div>
+    </section>
 
-<!-- ====== CONTACT ====== -->
-<section class="contact-section" id="contact" aria-labelledby="contactTitle">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-label">Contact</div>
-      <h2 id="contactTitle">联系我们</h2>
-      <p>欢迎通过以下方式联系我们</p>
-    </div>
-    <div class="contact-grid reveal-stagger">
-      <div class="contact-card">
-        <div class="contact-card-icon">&#128222;</div>
-        <h4>电话</h4>
-        <p>17600326088</p>
+    <!-- ====== SERVICES ====== -->
+    <section id="services" aria-labelledby="servicesTitle" style="margin-top:40px;">
+      <h2 class="section-title" id="servicesTitle">志愿服务方向</h2>
+      <div class="services-grid reveal" style="margin-top:20px;">
+        <div class="service-card"><div class="service-card-icon">🏠</div><h4>社区服务</h4><p>敬老助残、社区关爱、便民服务</p></div>
+        <div class="service-card"><div class="service-card-icon">📖</div><h4>支教助学</h4><p>乡村支教、课业辅导、科普课堂</p></div>
+        <div class="service-card"><div class="service-card-icon">🌿</div><h4>环保公益</h4><p>校园清洁、垃圾分类、植树绿化</p></div>
+        <div class="service-card"><div class="service-card-icon">🏫</div><h4>科普教育</h4><p>建筑科普、模型体验、知识讲座</p></div>
+        <div class="service-card"><div class="service-card-icon">💝</div><h4>爱心公益</h4><p>义卖活动、善款募集、关爱帮扶</p></div>
+        <div class="service-card"><div class="service-card-icon">🎓</div><h4>校园服务</h4><p>迎新接待、活动保障、校园引导</p></div>
       </div>
-      <div class="contact-card">
-        <div class="contact-card-icon">&#9993;</div>
-        <h4>邮箱</h4>
-        <p>chenxuanzai107@gmail.com</p>
+    </section>
+
+    <!-- ====== JOIN ====== -->
+    <section id="apply" aria-labelledby="applyTitle" style="margin-top:40px;">
+      <h2 class="section-title" id="applyTitle">加入我们</h2>
+      <div class="join-section" style="margin-top:20px;">
+        <h2>加入建工青协，一起发光</h2>
+        <p>只要你有热情、有爱心，建工青协欢迎你的加入</p>
+        <div class="join-steps">
+          <div class="join-step"><div class="join-step-num">1</div><h4>填写报名</h4><p>在线提交个人信息</p></div>
+          <div class="join-step"><div class="join-step-num">2</div><h4>参加面试</h4><p>简单交流互相了解</p></div>
+          <div class="join-step"><div class="join-step-num">3</div><h4>正式加入</h4><p>通过后即可参与活动</p></div>
+        </div>
       </div>
-      <div class="contact-card">
-        <div class="contact-card-icon">&#127760;</div>
-        <h4>微信公众号</h4>
-        <p>建工青协</p>
+
+      <div class="official-form reveal" id="registrationFormContainer" style="margin-top:20px;">
+        <h3>志愿者报名表</h3>
+        <input type="text" name="website" id="regHoneypot" style="display:none" tabindex="-1" autocomplete="off">
+        <form id="registrationForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="regName">姓名 <span class="required">*</span></label>
+              <input type="text" id="regName" required placeholder="请输入你的姓名">
+            </div>
+            <div class="form-group">
+              <label for="regDept">学院 / 专业 / 班级 <span class="required">*</span></label>
+              <input type="text" id="regDept" required placeholder="例如：建筑工程学院土木工程2024级1班">
+            </div>
+            <div class="form-group">
+              <label for="regContact">联系方式 <span class="required">*</span></label>
+              <input type="text" id="regContact" required placeholder="手机号或微信号">
+            </div>
+            <div class="form-group">
+              <label for="regDirection">志愿服务方向</label>
+              <select id="regDirection">
+                <option value="">请选择</option>
+                <option value="社区服务">社区服务</option><option value="支教助学">支教助学</option>
+                <option value="环保公益">环保公益</option><option value="科普教育">科普教育</option>
+                <option value="爱心公益">爱心公益</option><option value="校园服务">校园服务</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="regTime">可服务时间</label>
+              <input type="text" id="regTime" placeholder="例如：周末 / 周三下午">
+            </div>
+            <div class="form-group">
+              <label for="regIntro">个人介绍</label>
+              <textarea id="regIntro" rows="2" placeholder="简单介绍自己（选填）"></textarea>
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <button type="submit" class="btn btn-primary">提交报名</button>
+            <p class="form-msg" id="regMessage"></p>
+          </div>
+        </form>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
+
+    <!-- ====== FEEDBACK ====== -->
+    <section id="feedback" aria-labelledby="feedbackTitle" style="margin-top:40px;">
+      <h2 class="section-title" id="feedbackTitle">留言反馈</h2>
+      <div class="official-form reveal" style="margin-top:20px;">
+        <h3>在线留言</h3>
+        <input type="text" name="website" id="fbHoneypot" style="display:none" tabindex="-1" autocomplete="off">
+        <form id="feedbackForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="fbName">姓名 <span class="required">*</span></label>
+              <input type="text" id="fbName" required placeholder="请输入你的姓名">
+            </div>
+            <div class="form-group">
+              <label for="fbContact">联系方式 <span class="required">*</span></label>
+              <input type="text" id="fbContact" required placeholder="手机号或微信号">
+            </div>
+            <div class="form-group form-full">
+              <label for="fbContent">留言内容 <span class="required">*</span></label>
+              <textarea id="fbContent" required rows="4" placeholder="请输入你的留言..."></textarea>
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <button type="submit" class="btn btn-primary">提交留言</button>
+            <p class="form-msg" id="fbMessage"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ====== CONTACT ====== -->
+    <section id="contact" aria-labelledby="contactTitle" style="margin-top:40px;">
+      <h2 class="section-title" id="contactTitle">联系我们</h2>
+      <div class="services-grid reveal" style="margin-top:20px;">
+        <div class="service-card"><div class="service-card-icon">📞</div><h4>电话</h4><p>17600326088</p></div>
+        <div class="service-card"><div class="service-card-icon">✉️</div><h4>邮箱</h4><p>chenxuanzai107@gmail.com</p></div>
+        <div class="service-card"><div class="service-card-icon">🌐</div><h4>微信公众号</h4><p>建工青协</p></div>
+      </div>
+    </section>
+
+  </div><!-- /.content-main -->
+</div><!-- /.page-layout -->
 
 </main>
 
 <!-- ====== FOOTER ====== -->
-<footer class="footer" id="footer">
+<footer class="site-footer" id="footer">
   <div class="container">
-    <p class="footer-brand">建工青协</p>
+    <p class="site-footer-brand">建工青协</p>
     <p>广东石油化工学院建筑工程学院青年志愿者协会</p>
     <p>地址：广东省茂名市茂南区官渡二路139号 &nbsp;|&nbsp; 邮编：525000</p>
-    <nav class="footer-links" aria-label="页脚导航">
-      <a href="#about">关于</a>
-      <a href="#activities">活动</a>
-      <a href="#join">加入</a>
-      <a href="#feedback">留言</a>
-      <a href="admin.html" style="opacity:0.4;">管理</a>
-    </nav>
-    <p class="footer-copy">&copy; 2026 建工青协. All rights reserved.</p>
+    <ul class="site-footer-links">
+      <li><a href="#about">协会概况</a></li>
+      <li><a href="#activities">活动风采</a></li>
+      <li><a href="#services">志愿服务</a></li>
+      <li><a href="#apply">加入我们</a></li>
+      <li><a href="#feedback">留言反馈</a></li>
+      <li><a href="admin.html" style="opacity:0.35;">管理入口</a></li>
+    </ul>
+    <p class="site-footer-copy">&copy; 2026 广东石油化工学院建筑工程学院青年志愿者协会</p>
   </div>
 </footer>
 
-<!-- ====== BACK TO TOP ====== -->
+<!-- ====== Back to Top ====== -->
 <button class="back-to-top" id="backToTop" aria-label="返回顶部">&#8593;</button>
 
 <!-- ====== JSON-LD ====== -->
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "广东石油化工学院建筑工程学院青年志愿者协会",
-  "alternateName": "建工青协",
-  "url": "https://chenxuanzai107-dev.github.io/gyzy/",
-  "description": "广东石油化工学院建筑工程学院青年志愿者协会，汇聚青春力量，践行志愿精神。",
-  "parentOrganization": { "@type": "CollegeOrUniversity", "name": "广东石油化工学院" },
-  "address": { "@type": "PostalAddress", "addressLocality": "茂名", "addressRegion": "广东", "streetAddress": "茂南区官渡二路139号", "postalCode": "525000" },
-  "telephone": "17600326088",
-  "email": "chenxuanzai107@gmail.com"
-}
+{"@context":"https://schema.org","@type":"Organization","name":"广东石油化工学院建筑工程学院青年志愿者协会","alternateName":"建工青协","url":"https://chenxuanzai107-dev.github.io/gyzy/","description":"汇聚青春力量，践行志愿精神。","parentOrganization":{"@type":"CollegeOrUniversity","name":"广东石油化工学院"},"address":{"@type":"PostalAddress","addressLocality":"茂名","addressRegion":"广东","streetAddress":"茂南区官渡二路139号","postalCode":"525000"},"telephone":"17600326088","email":"chenxuanzai107@gmail.com"}
 </script>
 
-<!-- ====== SCRIPTS ====== -->
+<!-- ====== Scripts ====== -->
 <script src="js/main.js"></script>
 </body>
 </html>

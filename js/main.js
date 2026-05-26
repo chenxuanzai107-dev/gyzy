@@ -140,39 +140,49 @@
     }
   }
 
-  var categoryColors = {
-    '社区服务': ['#F59E0B', '#FBBF24'],
-    '科普教育': ['#2563EB', '#60A5FA'],
-    '环保公益': ['#16A34A', '#4ADE80'],
-    '支教助学': ['#7C3AED', '#A78BFA'],
-    '爱心公益': ['#DC2626', '#F87171'],
-    '校园服务': ['#0891B2', '#22D3EE'],
-  };
-
   function renderActivities(container, activities) {
-    container.innerHTML = activities.map(function (a) {
-      var imgHtml;
-      if (a.cover_image) {
-        imgHtml = '<img src="' + esc(a.cover_image) + '" alt="' + esc(a.title || '活动') + '" class="activity-cover-img" loading="lazy">';
-      } else {
-        var colors = categoryColors[a.category] || ['#F59E0B', '#FCD34D'];
-        imgHtml = '<div class="activity-img-placeholder" style="background:linear-gradient(135deg,' + colors[0] + ',' + colors[1] + ')">' + esc(a.category || '') + '</div>';
-      }
-      return '<a href="activity-detail.html?id=' + (a.id || '') + '" class="activity-card reveal" style="display:block;">'
-        + '<div class="activity-img">' + imgHtml
-        + '<span class="activity-category-tag">' + esc(a.category || '') + '</span></div>'
-        + '<div class="activity-body">'
-        + '<h4>' + esc(a.title || '') + '</h4>'
-        + '<div class="activity-meta">'
-        + '<span>📅 ' + esc(a.event_date || a.date || '') + '</span>'
-        + '<span>📍 ' + esc(a.location || '待定') + '</span></div>'
-        + '<div class="activity-meta">'
-        + '<span>👥 ' + (a.participants || 0) + '人</span>'
-        + '<span>⏱ ' + (a.service_hours || a.serviceHours || 0) + '小时</span></div>'
-        + '<p>' + esc(a.description || '') + '</p>'
-        + '<span style="display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:var(--color-accent);">查看详情 &rarr;</span>'
-        + '</div></a>';
-    }).join('');
+    if (!activities || !activities.length) {
+      container.innerHTML = '<p style="text-align:center;color:var(--color-fg-muted);padding:20px;">暂无活动数据</p>';
+      return;
+    }
+    var featured = activities[0];
+    var rest = activities.slice(1);
+    var html = '<div class="activity-featured reveal">'
+      + '<a href="activity-detail.html?id=' + (featured.id || '') + '" class="activity-featured-img">'
+      + (featured.cover_image
+        ? '<img src="' + esc(featured.cover_image) + '" alt="' + esc(featured.title) + '" loading="lazy">'
+        : '<span class="placeholder" style="color:#fff;font-size:16px;font-weight:600;">' + esc(featured.category || '活动封面') + '</span>')
+      + '</a>'
+      + '<div class="activity-featured-info">'
+      + '<span class="activity-category-tag">' + esc(featured.category || '') + '</span>'
+      + '<h3><a href="activity-detail.html?id=' + (featured.id || '') + '">' + esc(featured.title || '') + '</a></h3>'
+      + '<div class="meta">'
+      + '<span>📅 ' + esc(featured.event_date || '') + ' ' + esc(featured.event_time || '') + '</span>'
+      + '<span>📍 ' + esc(featured.location || '待定') + '</span>'
+      + '<span>👥 ' + (featured.participants || 0) + '人</span>'
+      + '<span>⏱ ' + (featured.service_hours || 0) + 'h</span>'
+      + '</div>'
+      + '<p>' + esc(featured.description || '') + '</p>'
+      + '<a href="activity-detail.html?id=' + (featured.id || '') + '" class="activity-more">查看详情 &rarr;</a>'
+      + '</div></div>';
+
+    if (rest.length > 0) {
+      html += '<div class="activity-news-list">';
+      rest.forEach(function(a) {
+        var dt = new Date(a.event_date || a.date || '');
+        var day = isNaN(dt.getTime()) ? '--' : dt.getDate();
+        var month = isNaN(dt.getTime()) ? '' : (dt.getMonth() + 1) + '月';
+        html += '<div class="activity-news-item reveal">'
+          + '<div class="activity-news-date"><span class="day">' + day + '</span>' + month + '</div>'
+          + '<div class="activity-news-info">'
+          + '<span class="activity-category-tag">' + esc(a.category || '') + '</span>'
+          + '<h4><a href="activity-detail.html?id=' + (a.id || '') + '">' + esc(a.title || '') + '</a></h4>'
+          + '<div class="meta"><span>📍 ' + esc(a.location || '待定') + '</span><span>👥 ' + (a.participants || 0) + '人</span><span>⏱ ' + (a.service_hours || 0) + 'h</span></div>'
+          + '</div></div>';
+      });
+      html += '</div>';
+    }
+    container.innerHTML = html;
     container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
   }
 
