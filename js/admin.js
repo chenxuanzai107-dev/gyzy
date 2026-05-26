@@ -12,7 +12,7 @@
   /* ====== 初始化 ====== */
   async function init() {
     if (!isSupabaseConfigured()) {
-      document.getElementById('app').innerHTML = '<div class="admin-empty"><div class="admin-empty-icon">⚙️</div><h2>尚未配置 Supabase</h2><p>请在 <code>js/supabase.js</code> 中配置 Supabase URL 和 anon key</p><p style="margin-top:16px;"><a href="index.html" class="btn btn-primary btn-sm">返回首页</a></p></div>';
+      document.getElementById('adminContent').innerHTML = '<div class="admin-empty"><div class="admin-empty-icon">⚙️</div><h2>尚未配置 Supabase</h2><p>请在 <code>js/supabase.js</code> 中配置 Supabase URL 和 anon key</p><p style="margin-top:16px;"><a href="index.html" class="btn btn-primary btn-sm">返回首页</a></p></div>';
       return;
     }
 
