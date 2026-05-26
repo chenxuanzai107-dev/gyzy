@@ -8,6 +8,15 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/admin.css">
+<style>
+/* extra admin styles */
+.form-group textarea { resize: vertical; min-height: 60px; }
+.admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 768px) {
+  .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-table { font-size: 12px; }
+}
+</style>
 </head>
 <body>
 
@@ -39,7 +48,6 @@
 </div>
 
 <script>
-// 纯 fetch 管理后台 - 无外部 SDK 依赖
 (function () {
   'use strict';
 
@@ -48,45 +56,56 @@
 
   var token = localStorage.getItem('gyzy_token');
   var user = null;
+  var adminRole = null;
 
-  function authHeaders() {
-    return token ? { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'apikey': ANON_KEY, 'Content-Type': 'application/json' };
+  // 带 token 的请求头
+  function headers() {
+    var h = { 'apikey': ANON_KEY, 'Content-Type': 'application/json' };
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    return h;
   }
 
-  // Verify auth + admin role on load
-  if (!token) { window.location.href = 'login.html'; }
+  function loadContent(html) {
+    document.getElementById('adminContent').innerHTML = html;
+  }
 
-  fetch(SUPABASE_URL + '/auth/v1/user', { headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token } })
-    .then(function(r) {
-      if (!r.ok) { localStorage.clear(); window.location.href = 'login.html'; throw new Error('auth'); }
-      return r.json();
-    })
-    .then(function(u) {
-      if (!u) throw new Error('no user');
-      user = u;
-      // 检查是否为管理员
-      return fetch(SUPABASE_URL + '/rest/v1/admin_users?id=eq.' + u.id, {
-        headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token }
-      }).then(function(r) { return r.json(); });
-    })
-    .then(function(admins) {
-      if (!admins || !admins.length) {
-        alert('当前账号无后台管理权限');
-        localStorage.clear();
-        window.location.href = 'index.html';
-        return;
-      }
-      document.getElementById('adminUserEmail').textContent = user.email + ' (' + (admins[0].role === 'super' ? '超管' : '管理员') + ')';
-      initTabs();
-      loadDashboard();
-    })
-    .catch(function(e) {
-      if (e.message !== 'auth' && e.message !== 'no user') {
-        localStorage.clear();
-        window.location.href = 'login.html';
-      }
-    });
+  // ====== 启动: 验证身份 ======
+  if (!token) {
+    loadContent('<div class="admin-empty"><h2>未登录</h2><p>即将跳转到登录页...</p></div>');
+    setTimeout(function() { window.location.href = 'login.html'; }, 1000);
+  } else {
+    loadContent('<div class="admin-loading">正在验证身份...</div>');
+    fetch(SUPABASE_URL + '/auth/v1/user', { headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token } })
+      .then(function(r) {
+        if (!r.ok) { localStorage.clear(); window.location.href = 'login.html'; throw new Error('auth'); }
+        return r.json();
+      })
+      .then(function(u) {
+        user = u;
+        console.log('[ADMIN] User:', u.email);
+        // 查 admin_users 表
+        return fetch(SUPABASE_URL + '/rest/v1/admin_users?id=eq.' + u.id, { headers: headers() });
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(admins) {
+        if (!admins || !admins.length) {
+          loadContent('<div class="admin-empty"><h2>无权限</h2><p>当前账号无后台管理权限</p><button onclick="localStorage.clear();window.location.href=\'index.html\'" class="btn btn-primary btn-sm" style="margin-top:16px;">返回首页</button></div>');
+          return;
+        }
+        adminRole = admins[0].role;
+        console.log('[ADMIN] Role:', adminRole);
+        document.getElementById('adminUserEmail').textContent = user.email + ' (' + (adminRole === 'super' ? '超管' : '管理员') + ')';
+        initTabs();
+        loadDashboard();
+      })
+      .catch(function(e) {
+        if (e.message !== 'auth') {
+          loadContent('<div class="admin-empty"><h2>连接失败</h2><p>无法连接 Supabase 服务器，请检查网络</p><a href="login.html" class="btn btn-primary btn-sm" style="margin-top:16px;">重新登录</a></div>');
+        }
+      });
+  }
 
+  // ====== Tab 切换 ======
   function initTabs() {
     document.querySelectorAll('.admin-nav-item').forEach(function(item) {
       item.addEventListener('click', function() {
@@ -102,17 +121,15 @@
     });
   }
 
-  function fetchAPI(path) {
-    return fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: authHeaders() }).then(function(r) { return r.json(); });
-  }
-
+  // ====== 仪表盘 (6项统计) ======
   function loadDashboard() {
-    var c = document.getElementById('adminContent');
-    c.innerHTML = '<div class="admin-loading">加载中...</div>';
+    loadContent('<div class="admin-loading">加载中...</div>');
 
     function count(path) {
-      return fetch(SUPABASE_URL + '/rest/v1/' + path + '?select=count', { headers: authHeaders() })
-        .then(function(r){ return r.json(); }).then(function(d){ return d[0]?.count || 0; }).catch(function(){ return 0; });
+      return fetch(SUPABASE_URL + '/rest/v1/' + path + '?select=count', { headers: headers() })
+        .then(function(r){ return r.json(); })
+        .then(function(d){ return d[0]?.count || 0; })
+        .catch(function(){ return 0; });
     }
 
     Promise.all([
@@ -121,215 +138,224 @@
       count('messages'),
       count('messages?is_handled=eq.false'),
       count('activities'),
-      fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: authHeaders() }).then(function(r){return r.json();}).catch(function(){return [];}),
-    ]).then(function(results) {
-      var totalApps = results[0], pendingApps = results[1], totalMsgs = results[2];
-      var unhandledMsgs = results[3], totalActs = results[4], stats = results[5] || [];
-      var serviceHours = (stats.find(function(s){return s.key==='service_hours';}) || {}).value || 3200;
-
-      c.innerHTML = '<h2>仪表盘</h2>'
+      fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: headers() }).then(function(r){return r.json();}).catch(function(){return [];}),
+    ]).then(function(r) {
+      var stats = r[5] || [];
+      var hours = (stats.find(function(s){return s.key==='service_hours';}) || {}).value || 3200;
+      loadContent('<h2>仪表盘</h2>'
         + '<div class="admin-stats-grid">'
-        + '<div class="admin-stat-card"><div class="admin-stat-num">' + totalApps + '</div><div>报名总数</div></div>'
-        + '<div class="admin-stat-card"><div class="admin-stat-num" style="color:' + (pendingApps > 0 ? '#DC2626' : '') + '">' + pendingApps + '</div><div>待审核报名</div></div>'
-        + '<div class="admin-stat-card"><div class="admin-stat-num">' + totalMsgs + '</div><div>留言总数</div></div>'
-        + '<div class="admin-stat-card"><div class="admin-stat-num" style="color:' + (unhandledMsgs > 0 ? '#DC2626' : '') + '">' + unhandledMsgs + '</div><div>未处理留言</div></div>'
-        + '<div class="admin-stat-card"><div class="admin-stat-num">' + totalActs + '</div><div>已发布活动</div></div>'
-        + '<div class="admin-stat-card"><div class="admin-stat-num">' + serviceHours + '</div><div>累计服务时长(h)</div></div>'
-        + '</div><p style="margin-top:24px;color:#999;font-size:14px;">欢迎使用建工青协管理后台</p>';
+        + card(r[0], '报名总数') + card(r[1], '待审核', r[1] > 0 ? '#DC2626' : '') + card(r[2], '留言总数')
+        + card(r[3], '未处理', r[3] > 0 ? '#DC2626' : '') + card(r[4], '活动总数') + card(hours, '服务时长(h)')
+        + '</div><p style="margin-top:24px;color:#999;font-size:14px;">欢迎使用建工青协管理后台</p>');
     });
+    function card(n, label, color) {
+      return '<div class="admin-stat-card"><div class="admin-stat-num"' + (color ? ' style="color:' + color + '"' : '') + '>' + n + '</div><div>' + label + '</div></div>';
+    }
   }
 
+  // ====== 报名管理 ======
   function loadApplications() {
-    var c = document.getElementById('adminContent');
-    c.innerHTML = '<h2>报名管理</h2><input type="text" id="appSearch" placeholder="搜索..." class="admin-input" style="max-width:300px;margin-bottom:16px;"> <button id="exportCSV" class="btn btn-sm btn-outline">导出 CSV</button><div id="appTable"><div class="admin-loading">加载中...</div></div>';
-    fetchAPI('applications?order=created_at.desc').then(function(data) {
-      renderAppTable(data);
-    });
-    document.getElementById('appSearch').addEventListener('input', function() {
-      var q = this.value;
+    loadContent('<h2>报名管理</h2>'
+      + '<div class="admin-toolbar"><input type="text" id="appSearch" placeholder="搜索姓名或联系方式..." class="admin-input">'
+      + '<select id="appStatusFilter" class="admin-input" style="min-width:auto;"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option><option value="contacted">已联系</option></select>'
+      + '<button id="exportCSV" class="btn btn-sm btn-outline">导出 CSV</button></div>'
+      + '<div id="appTable"><div class="admin-loading">加载中...</div></div>');
+
+    function load() {
+      var search = document.getElementById('appSearch')?.value || '';
+      var status = document.getElementById('appStatusFilter')?.value || '';
       var url = 'applications?order=created_at.desc';
-      if (q) url += '&or=(name.ilike.*' + q + '*,contact.ilike.*' + q + '*)';
-      fetchAPI(url).then(renderAppTable);
-    });
-    document.getElementById('exportCSV').addEventListener('click', function() {
-      fetchAPI('applications?order=created_at.desc').then(function(data) {
-        var csv = '﻿姓名,学院专业,联系方式,志愿方向,可服务时间,状态,时间\n' + data.map(function(a) {
-          return [a.name, a.department, a.contact, a.direction, a.available_time, a.status, a.created_at].join(',');
-        }).join('\n');
-        var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-        var url = URL.createObjectURL(blob);
-        var link = document.createElement('a'); link.href = url; link.download = 'applications.csv'; link.click();
+      if (search) url += '&or=(name.ilike.*' + encodeURIComponent(search) + '*,contact.ilike.*' + encodeURIComponent(search) + '*)';
+      if (status) url += '&status=eq.' + status;
+
+      fetch(SUPABASE_URL + '/rest/v1/' + url, { headers: headers() })
+        .then(function(r){ return r.json(); })
+        .then(renderApps);
+    }
+
+    function renderApps(data) {
+      var t = document.getElementById('appTable');
+      if (!t) return;
+      if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无报名数据</p>'; return; }
+      var labels = { pending: '待审核', approved: '已通过', rejected: '已拒绝', contacted: '已联系' };
+      t.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>姓名</th><th>学院/专业</th><th>联系方式</th><th>志愿方向</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
+        + data.map(function(a) {
+          return '<tr><td>' + e(a.name) + '</td><td>' + e(a.department) + '</td><td>' + e(a.contact) + '</td><td>' + e(a.direction) + '</td>'
+            + '<td><select class="status-sel" data-id="' + a.id + '">' + ['pending','approved','rejected','contacted'].map(function(s){ return '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+(labels[s]||s)+'</option>'; }).join('') + '</select></td>'
+            + '<td>' + fmtDate(a.created_at) + '</td>'
+            + '<td><button class="btn btn-sm" style="color:#DC2626;" data-del="'+a.id+'">删除</button></td></tr>';
+        }).join('') + '</tbody></table></div>';
+      document.getElementById('appTable').querySelectorAll('.status-sel').forEach(function(s) {
+        s.addEventListener('change', function() {
+          fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({status:this.value}) }).then(load);
+        });
       });
+      document.getElementById('appTable').querySelectorAll('[data-del]').forEach(function(b) {
+        b.addEventListener('click', function() { if(!confirm('确定删除?')) return; fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() }).then(load); });
+      });
+    }
+
+    load();
+    document.getElementById('appSearch')?.addEventListener('input', load);
+    document.getElementById('appStatusFilter')?.addEventListener('change', load);
+    document.getElementById('exportCSV')?.addEventListener('click', function() {
+      fetch(SUPABASE_URL+'/rest/v1/applications?order=created_at.desc', { headers: headers() })
+        .then(function(r){ return r.json(); }).then(function(data) {
+          if (!data || !data.length) { alert('无数据'); return; }
+          var csv = '﻿姓名,学院专业,联系方式,志愿方向,可服务时间,状态,时间\n' + data.map(function(a){ return [a.name,a.department,a.contact,a.direction,a.available_time,a.status,a.created_at].join(','); }).join('\n');
+          var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+          var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'applications.csv'; a.click();
+        });
     });
   }
 
-  function renderAppTable(data) {
-    var t = document.getElementById('appTable');
-    if (!t) return;
-    if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无报名数据</p>'; return; }
-    var statusLabels = {pending:'待审核',approved:'已通过',rejected:'已拒绝',contacted:'已联系'};
-    t.innerHTML = '<table class="admin-table"><thead><tr><th>姓名</th><th>学院/专业</th><th>联系方式</th><th>志愿方向</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
-      + data.map(function(a) {
-        return '<tr><td>'+(a.name||'')+'</td><td>'+(a.department||'')+'</td><td>'+(a.contact||'')+'</td><td>'+(a.direction||'')+'</td>'
-          + '<td><select class="status-sel" data-id="'+a.id+'">'+ ['pending','approved','rejected','contacted'].map(function(s){return '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+(statusLabels[s]||s)+'</option>';}).join('')+'</select></td>'
-          + '<td>'+new Date(a.created_at).toLocaleDateString('zh-CN')+'</td>'
-          + '<td><button class="btn btn-sm" style="color:#DC2626;" data-del="'+a.id+'">删除</button></td></tr>';
-      }).join('') + '</tbody></table>';
-
-    t.querySelectorAll('.status-sel').forEach(function(s) {
-      s.addEventListener('change', function() {
-        fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-id'), {method:'PATCH',headers:authHeaders(),body:JSON.stringify({status:this.value})}).then(function(){});
-      });
-    });
-    t.querySelectorAll('[data-del]').forEach(function(b) {
-      b.addEventListener('click', function() {
-        if(!confirm('确定删除?')) return;
-        fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-del'), {method:'DELETE',headers:authHeaders()}).then(function(){loadApplications();});
-      });
-    });
-  }
-
+  // ====== 留言管理 ======
   function loadMessages() {
-    var c = document.getElementById('adminContent');
-    c.innerHTML = '<h2>留言管理</h2><input type="text" id="msgSearch" placeholder="搜索..." class="admin-input" style="max-width:300px;margin-bottom:16px;"><div id="msgTable"><div class="admin-loading">加载中...</div></div>';
-    fetchAPI('messages?order=created_at.desc').then(function(data) { renderMsgTable(data); });
-    document.getElementById('msgSearch').addEventListener('input', function() {
-      var q = this.value;
+    loadContent('<h2>留言管理</h2><div class="admin-toolbar"><input type="text" id="msgSearch" placeholder="搜索内容..." class="admin-input"><select id="msgStatusFilter" class="admin-input" style="min-width:auto;"><option value="">全部</option><option value="false">未处理</option><option value="true">已处理</option></select></div><div id="msgTable"><div class="admin-loading">加载中...</div></div>');
+
+    function load() {
+      var search = document.getElementById('msgSearch')?.value || '';
+      var handled = document.getElementById('msgStatusFilter')?.value;
       var url = 'messages?order=created_at.desc';
-      if (q) url += '&or=(name.ilike.*' + q + '*,content.ilike.*' + q + '*)';
-      fetchAPI(url).then(renderMsgTable);
-    });
+      if (search) url += '&or=(name.ilike.*' + encodeURIComponent(search) + '*,content.ilike.*' + encodeURIComponent(search) + '*)';
+      if (handled !== '') url += '&is_handled=eq.' + handled;
+
+      fetch(SUPABASE_URL + '/rest/v1/' + url, { headers: headers() })
+        .then(function(r){ return r.json(); })
+        .then(renderMsgs);
+    }
+
+    function renderMsgs(data) {
+      var t = document.getElementById('msgTable');
+      if (!t) return;
+      if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无留言</p>'; return; }
+      t.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>姓名</th><th>联系方式</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
+        + data.map(function(m) {
+          return '<tr><td>' + e(m.name) + '</td><td>' + e(m.contact) + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + e(m.content) + '">' + e(m.content) + '</td>'
+            + '<td><span class="badge ' + (m.is_handled ? 'badge-green' : 'badge-orange') + '">' + (m.is_handled ? '已处理' : '未处理') + '</span></td>'
+            + '<td>' + fmtDate(m.created_at) + '</td>'
+            + '<td>' + (!m.is_handled ? '<button class="btn btn-sm mark-btn" data-id="'+m.id+'">处理</button> ' : '') + '<button class="btn btn-sm" style="color:#DC2626;" data-del="'+m.id+'">删除</button></td></tr>';
+        }).join('') + '</tbody></table></div>';
+      document.getElementById('msgTable').querySelectorAll('.mark-btn').forEach(function(b) {
+        b.addEventListener('click', function() { fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({is_handled:true}) }).then(load); });
+      });
+      document.getElementById('msgTable').querySelectorAll('[data-del]').forEach(function(b) {
+        b.addEventListener('click', function() { if(!confirm('确定删除?')) return; fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() }).then(load); });
+      });
+    }
+
+    load();
+    document.getElementById('msgSearch')?.addEventListener('input', load);
+    document.getElementById('msgStatusFilter')?.addEventListener('change', load);
   }
 
-  function renderMsgTable(data) {
-    var t = document.getElementById('msgTable');
-    if (!t) return;
-    if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无留言</p>'; return; }
-    t.innerHTML = '<table class="admin-table"><thead><tr><th>姓名</th><th>联系方式</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
-      + data.map(function(m) {
-        return '<tr><td>'+(m.name||'')+'</td><td>'+(m.contact||'')+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(m.content||'')+'">'+(m.content||'')+'</td>'
-          + '<td><span class="badge '+(m.is_handled?'badge-green':'badge-orange')+'">'+(m.is_handled?'已处理':'未处理')+'</span></td>'
-          + '<td>'+new Date(m.created_at).toLocaleDateString('zh-CN')+'</td>'
-          + '<td>'+(m.is_handled?'':'<button class="btn btn-sm mark-btn" data-id="'+m.id+'">标记已处理</button> ')
-          + '<button class="btn btn-sm" style="color:#DC2626;" data-del="'+m.id+'">删除</button></td></tr>';
-      }).join('') + '</tbody></table>';
-
-    t.querySelectorAll('.mark-btn').forEach(function(b) {
-      b.addEventListener('click', function() {
-        fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-id'), {method:'PATCH',headers:authHeaders(),body:JSON.stringify({is_handled:true})}).then(function(){loadMessages();});
-      });
-    });
-    t.querySelectorAll('[data-del]').forEach(function(b) {
-      b.addEventListener('click', function() {
-        if(!confirm('确定删除?')) return;
-        fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-del'), {method:'DELETE',headers:authHeaders()}).then(function(){loadMessages();});
-      });
-    });
-  }
-
+  // ====== 活动管理 ======
   function loadActivities() {
-    var c = document.getElementById('adminContent');
-    c.innerHTML = '<h2>活动管理</h2><button id="addActBtn" class="btn btn-primary btn-sm" style="margin-bottom:16px;">+ 新增活动</button><div id="actTable"><div class="admin-loading">加载中...</div></div>';
-    fetchAPI('activities?order=event_date.desc').then(function(data) { renderActTable(data); });
-    document.getElementById('addActBtn').addEventListener('click', function() { showActForm(null); });
+    loadContent('<h2>活动管理</h2><button id="addActBtn" class="btn btn-primary btn-sm" style="margin-bottom:16px;">+ 新增</button><div id="actTable"><div class="admin-loading">加载中...</div></div>');
+
+    function load() {
+      fetch(SUPABASE_URL + '/rest/v1/activities?order=event_date.desc', { headers: headers() })
+        .then(function(r){ return r.json(); })
+        .then(renderActs);
+    }
+
+    function renderActs(data) {
+      var t = document.getElementById('actTable');
+      if (!t) return;
+      if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无活动</p>'; return; }
+      t.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>标题</th><th>分类</th><th>日期</th><th>发布</th><th>首页</th><th>操作</th></tr></thead><tbody>'
+        + data.map(function(a) {
+          return '<tr><td>' + e(a.title) + '</td><td>' + e(a.category) + '</td><td>' + e(a.event_date) + '</td>'
+            + '<td><button class="btn btn-sm pub-btn" data-id="' + a.id + '" data-pub="' + (!a.is_published) + '">' + (a.is_published !== false ? '✅ 已发布' : '❌ 下架') + '</button></td>'
+            + '<td><button class="btn btn-sm show-btn" data-id="' + a.id + '" data-show="' + (!a.show_on_home) + '">' + (a.show_on_home ? '✅' : '❌') + '</button></td>'
+            + '<td><button class="btn btn-sm edit-btn" data-id="' + a.id + '">编辑</button> <button class="btn btn-sm" style="color:#DC2626;" data-del="' + a.id + '">删除</button></td></tr>';
+        }).join('') + '</tbody></table></div>';
+
+      document.getElementById('actTable').querySelectorAll('.pub-btn').forEach(function(b) {
+        b.addEventListener('click', function() {
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({is_published: this.getAttribute('data-pub') === 'true'}) }).then(load);
+        });
+      });
+      document.getElementById('actTable').querySelectorAll('.show-btn').forEach(function(b) {
+        b.addEventListener('click', function() {
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({show_on_home: this.getAttribute('data-show') === 'true'}) }).then(load);
+        });
+      });
+      document.getElementById('actTable').querySelectorAll('.edit-btn').forEach(function(b) {
+        b.addEventListener('click', function() {
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { headers: headers() })
+            .then(function(r){ return r.json(); }).then(function(d){ if(d[0]) showActForm(d[0], load); });
+        });
+      });
+      document.getElementById('actTable').querySelectorAll('[data-del]').forEach(function(b) {
+        b.addEventListener('click', function() { if(!confirm('确定删除?')) return; fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() }).then(load); });
+      });
+    }
+
+    load();
+    document.getElementById('addActBtn').addEventListener('click', function() { showActForm(null, load); });
   }
 
-  function renderActTable(data) {
-    var t = document.getElementById('actTable');
-    if (!t) return;
-    if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无活动</p>'; return; }
-    t.innerHTML = '<table class="admin-table"><thead><tr><th>标题</th><th>分类</th><th>日期</th><th>首页</th><th>操作</th></tr></thead><tbody>'
-      + data.map(function(a) {
-        return '<tr><td>'+(a.title||'')+'</td><td>'+(a.category||'')+'</td><td>'+(a.event_date||'')+'</td>'
-          + '<td>'+(a.show_on_home?'✅':'❌')+'</td>'
-          + '<td><button class="btn btn-sm toggle-btn" data-id="'+a.id+'" data-show="'+(!a.show_on_home)+'">'+(a.show_on_home?'隐藏':'显示')+'</button> '
-          + '<button class="btn btn-sm edit-btn" data-id="'+a.id+'">编辑</button> '
-          + '<button class="btn btn-sm" style="color:#DC2626;" data-del="'+a.id+'">删除</button></td></tr>';
-      }).join('') + '</tbody></table>';
-
-    t.querySelectorAll('.toggle-btn').forEach(function(b) {
-      b.addEventListener('click', function() {
-        fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), {method:'PATCH',headers:authHeaders(),body:JSON.stringify({show_on_home:this.getAttribute('data-show')==='true'})}).then(function(){loadActivities();});
-      });
-    });
-    t.querySelectorAll('.edit-btn').forEach(function(b) {
-      b.addEventListener('click', function() {
-        fetchAPI('activities?id=eq.'+this.getAttribute('data-id')).then(function(d) { if(d[0]) showActForm(d[0]); });
-      });
-    });
-    t.querySelectorAll('[data-del]').forEach(function(b) {
-      b.addEventListener('click', function() {
-        if(!confirm('确定删除?')) return;
-        fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-del'), {method:'DELETE',headers:authHeaders()}).then(function(){loadActivities();});
-      });
-    });
-  }
-
-  function showActForm(act) {
+  function showActForm(act, cb) {
     var isEdit = !!act;
     var overlay = document.createElement('div');
     overlay.className = 'admin-modal-overlay';
-    overlay.innerHTML = '<div class="admin-modal"><h3>'+(isEdit?'编辑活动':'新增活动')+'</h3>'
-      + '<div class="form-grid">'
-      + '<div class="form-group"><label>标题</label><input id="afTitle" value="'+(act?.title||'')+'"></div>'
-      + '<div class="form-group"><label>分类</label><input id="afCat" value="'+(act?.category||'')+'"></div>'
-      + '<div class="form-group"><label>日期</label><input id="afDate" type="date" value="'+(act?.event_date||'')+'"></div>'
-      + '<div class="form-group"><label>时间</label><input id="afTime" value="'+(act?.event_time||'')+'"></div>'
-      + '<div class="form-group"><label>地点</label><input id="afLoc" value="'+(act?.location||'')+'"></div>'
-      + '<div class="form-group"><label>参与人数</label><input id="afParts" type="number" value="'+(act?.participants||'')+'"></div>'
-      + '<div class="form-group"><label>服务时长(h)</label><input id="afHours" type="number" value="'+(act?.service_hours||'')+'"></div>'
-      + '<div class="form-group"><label>封面图URL</label><input id="afImg" value="'+(act?.cover_image||'')+'"></div>'
-      + '</div><div class="form-group"><label>简介</label><textarea id="afDesc" rows="3">'+(act?.description||'')+'</textarea></div>'
+    overlay.innerHTML = '<div class="admin-modal"><h3>' + (isEdit ? '编辑活动' : '新增活动') + '</h3>'
+      + inp('afTitle', '标题', act?.title) + inp('afCat', '分类', act?.category)
+      + inp('afDate', '日期', act?.event_date, 'date') + inp('afTime', '时间', act?.event_time)
+      + inp('afLoc', '地点', act?.location) + inp('afParts', '参与人数', act?.participants, 'number')
+      + inp('afHours', '服务时长(h)', act?.service_hours, 'number')
+      + inp('afImg', '封面图URL', act?.cover_image)
+      + '<div class="form-group"><label>简介</label><textarea id="afDesc" rows="3">' + e(act?.description) + '</textarea></div>'
       + '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">'
-      + '<button class="btn btn-outline btn-sm" id="cancelAf">取消</button>'
-      + '<button class="btn btn-primary btn-sm" id="saveAf">保存</button></div></div>';
+      + '<button class="btn btn-outline btn-sm" id="cancelAf">取消</button><button class="btn btn-primary btn-sm" id="saveAf">保存</button></div></div>';
     document.body.appendChild(overlay);
 
-    document.getElementById('cancelAf').addEventListener('click', function(){overlay.remove();});
+    document.getElementById('cancelAf').addEventListener('click', function(){ overlay.remove(); });
     document.getElementById('saveAf').addEventListener('click', function() {
       var d = {
-        title: document.getElementById('afTitle').value,
-        category: document.getElementById('afCat').value,
-        event_date: document.getElementById('afDate').value,
-        event_time: document.getElementById('afTime').value,
-        location: document.getElementById('afLoc').value,
-        participants: parseInt(document.getElementById('afParts').value)||0,
-        service_hours: parseInt(document.getElementById('afHours').value)||0,
-        cover_image: document.getElementById('afImg').value,
-        description: document.getElementById('afDesc').value
+        title: gv('afTitle'), category: gv('afCat'), event_date: gv('afDate'),
+        event_time: gv('afTime'), location: gv('afLoc'),
+        participants: parseInt(gv('afParts'))||0, service_hours: parseInt(gv('afHours'))||0,
+        cover_image: gv('afImg'), description: gv('afDesc')
       };
-      var method = isEdit ? 'PATCH' : 'POST';
+      if (!d.title) { alert('请输入标题'); return; }
       var url = isEdit ? SUPABASE_URL+'/rest/v1/activities?id=eq.'+act.id : SUPABASE_URL+'/rest/v1/activities';
-      if (!isEdit) d.show_on_home = true;
-      fetch(url, {method:method,headers:authHeaders(),body:JSON.stringify(d)}).then(function() {
-        overlay.remove();
-        loadActivities();
-      });
+      var method = isEdit ? 'PATCH' : 'POST';
+      if (!isEdit) { d.show_on_home = true; d.is_published = true; }
+      fetch(url, { method: method, headers: headers(), body: JSON.stringify(d) }).then(function() { overlay.remove(); cb(); });
     });
+    function inp(id, label, val, type) { return '<div class="form-group"><label>' + label + '</label><input id="' + id + '" value="' + e(val) + '"' + (type ? ' type="' + type + '"' : '') + '></div>'; }
+    function gv(id) { var el = document.getElementById(id); return el ? el.value : ''; }
   }
 
+  // ====== 统计管理 ======
   function loadStats() {
-    var c = document.getElementById('adminContent');
-    c.innerHTML = '<h2>统计管理</h2><div id="statsForm"><div class="admin-loading">加载中...</div></div>';
-    fetchAPI('site_stats?order=id').then(function(data) {
-      var f = document.getElementById('statsForm');
-      if (!data || !data.length) { f.innerHTML = '<p>暂无数据</p>'; return; }
-      f.innerHTML = data.map(function(s) {
-        return '<div class="form-group" style="margin-bottom:12px;"><label>'+(s.label||s.key)+'</label><input type="number" id="st_'+s.key+'" value="'+s.value+'"></div>';
-      }).join('')
-        + '<button id="saveStatsBtn" class="btn btn-primary btn-sm" style="margin-top:12px;">保存</button>';
-      document.getElementById('saveStatsBtn').addEventListener('click', function() {
-        data.forEach(function(s) {
-          var v = parseInt(document.getElementById('st_'+s.key).value)||0;
-          fetch(SUPABASE_URL+'/rest/v1/site_stats?key=eq.'+s.key, {method:'PATCH',headers:authHeaders(),body:JSON.stringify({value:v})});
+    loadContent('<h2>统计管理</h2><div id="statsForm"><div class="admin-loading">加载中...</div></div>');
+    fetch(SUPABASE_URL + '/rest/v1/site_stats?order=id', { headers: headers() })
+      .then(function(r){ return r.json(); }).then(function(data) {
+        var f = document.getElementById('statsForm');
+        if (!data || !data.length) { f.innerHTML = '<p>暂无数据</p>'; return; }
+        f.innerHTML = data.map(function(s) {
+          return '<div class="form-group" style="margin-bottom:12px;"><label>' + e(s.label || s.key) + '</label><input type="number" id="st_' + s.key + '" value="' + s.value + '"></div>';
+        }).join('') + '<button id="saveStatsBtn" class="btn btn-primary btn-sm" style="margin-top:12px;">保存</button>';
+        document.getElementById('saveStatsBtn').addEventListener('click', function() {
+          data.forEach(function(s) {
+            var v = parseInt(document.getElementById('st_' + s.key).value)||0;
+            fetch(SUPABASE_URL+'/rest/v1/site_stats?key=eq.'+s.key, { method:'PATCH', headers:headers(), body:JSON.stringify({value:v}) });
+          });
+          alert('已保存');
         });
-        alert('已保存');
       });
-    });
   }
 
+  function e(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(d) { return d ? new Date(d).toLocaleDateString('zh-CN') : ''; }
+
+  // ====== 登出 ======
   document.getElementById('logoutBtn').addEventListener('click', function() {
     localStorage.clear();
+    fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST', headers: headers() }).catch(function(){});
     window.location.href = 'login.html';
   });
 })();
