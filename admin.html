@@ -48,6 +48,7 @@
 </div>
 
 <script>
+// admin.js v2 — dashboard auto-refresh after CRUD, cache version bust
 (function () {
   'use strict';
 
@@ -57,6 +58,7 @@
   var token = localStorage.getItem('gyzy_token');
   var user = null;
   var adminRole = null;
+  var currentTab = 'dashboard';
 
   // 带 token 的请求头
   function headers() {
@@ -111,42 +113,89 @@
       item.addEventListener('click', function() {
         document.querySelectorAll('.admin-nav-item').forEach(function(i) { i.classList.remove('active'); });
         item.classList.add('active');
-        var tab = item.getAttribute('data-tab');
-        if (tab === 'dashboard') loadDashboard();
-        else if (tab === 'applications') loadApplications();
-        else if (tab === 'messages') loadMessages();
-        else if (tab === 'activities') loadActivities();
-        else if (tab === 'stats') loadStats();
+        currentTab = item.getAttribute('data-tab');
+        if (currentTab === 'dashboard') loadDashboard();
+        else if (currentTab === 'applications') loadApplications();
+        else if (currentTab === 'messages') loadMessages();
+        else if (currentTab === 'activities') loadActivities();
+        else if (currentTab === 'stats') loadStats();
       });
     });
   }
 
-  // ====== 仪表盘 (6项统计) ======
-  function loadDashboard() {
-    loadContent('<div class="admin-loading">加载中...</div>');
+  // 静默刷新仪表盘(只在仪表盘可见时更新 DOM)
+  function refreshDashboardIfVisible() {
+    if (currentTab !== 'dashboard') return; // 不在仪表盘页，跳过
+    if (!document.getElementById('refreshDashboard')) return; // 还没渲染
 
     function count(path) {
       return fetch(SUPABASE_URL + '/rest/v1/' + path + '?select=count', { headers: headers() })
-        .then(function(r){ return r.json(); })
+        .then(function(r){ if(!r.ok) throw new Error('err'); return r.json(); })
         .then(function(d){ return d[0]?.count || 0; })
         .catch(function(){ return 0; });
     }
 
-    Promise.all([
+    Promise.allSettled([
+      count('applications'), count('applications?status=eq.pending'),
+      count('messages'), count('messages?is_handled=eq.false'), count('activities'),
+      fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: headers() }).then(function(r){return r.json();}).catch(function(){return [];}),
+    ]).then(function(r) {
+      var apps = r[0].value, pend = r[1].value, msgs = r[2].value;
+      var unread = r[3].value, acts = r[4].value, stats = r[5].value || [];
+      var hours = (stats.find(function(s){return s.key==='service_hours';}) || {}).value || 3200;
+      // 只更新数字，不替换整页
+      var cards = document.querySelectorAll('.admin-stat-num');
+      if (cards.length >= 6) {
+        cards[0].textContent = apps;
+        cards[1].textContent = pend; cards[1].style.color = pend > 0 ? '#DC2626' : '';
+        cards[2].textContent = msgs;
+        cards[3].textContent = unread; cards[3].style.color = unread > 0 ? '#DC2626' : '';
+        cards[4].textContent = acts;
+        cards[5].textContent = hours;
+        var ts = document.getElementById('dashTimestamp');
+        if (ts) ts.textContent = '最后更新: ' + new Date().toLocaleTimeString('zh-CN');
+      }
+    });
+  }
+
+  // ====== 仪表盘 (动态数据 + 刷新按钮 + 时间戳) ======
+  function loadDashboard() {
+    loadContent('<div class="admin-loading">加载中...</div>');
+
+    function count(path) {
+      var url = SUPABASE_URL + '/rest/v1/' + path + '?select=count';
+      return fetch(url, { headers: headers() })
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(d){ return d[0]?.count || 0; })
+        .catch(function(e){ console.error('[DASH] count error:', path, e); return 0; });
+    }
+
+    Promise.allSettled([
       count('applications'),
       count('applications?status=eq.pending'),
       count('messages'),
       count('messages?is_handled=eq.false'),
       count('activities'),
-      fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: headers() }).then(function(r){return r.json();}).catch(function(){return [];}),
+      fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: headers() })
+        .then(function(r){ return r.json(); }).catch(function(){ return []; }),
     ]).then(function(r) {
-      var stats = r[5] || [];
+      var apps = r[0].value, pendingApps = r[1].value, msgs = r[2].value;
+      var unhandled = r[3].value, acts = r[4].value, stats = r[5].value || [];
       var hours = (stats.find(function(s){return s.key==='service_hours';}) || {}).value || 3200;
+      var now = new Date().toLocaleTimeString('zh-CN');
+
       loadContent('<h2>仪表盘</h2>'
+        + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">'
+        + '<button id="refreshDashboard" class="btn btn-sm btn-outline">🔄 刷新数据</button>'
+        + '<span id="dashTimestamp" style="font-size:12px;color:#999;">最后更新: ' + now + '</span>'
+        + '</div>'
         + '<div class="admin-stats-grid">'
-        + card(r[0], '报名总数') + card(r[1], '待审核', r[1] > 0 ? '#DC2626' : '') + card(r[2], '留言总数')
-        + card(r[3], '未处理', r[3] > 0 ? '#DC2626' : '') + card(r[4], '活动总数') + card(hours, '服务时长(h)')
+        + card(apps, '报名总数') + card(pendingApps, '待审核', pendingApps > 0 ? '#DC2626' : '')
+        + card(msgs, '留言总数') + card(unhandled, '未处理', unhandled > 0 ? '#DC2626' : '')
+        + card(acts, '活动总数') + card(hours, '服务时长(h)')
         + '</div><p style="margin-top:24px;color:#999;font-size:14px;">欢迎使用建工青协管理后台</p>');
+
+      document.getElementById('refreshDashboard').addEventListener('click', loadDashboard);
     });
     function card(n, label, color) {
       return '<div class="admin-stat-card"><div class="admin-stat-num"' + (color ? ' style="color:' + color + '"' : '') + '>' + n + '</div><div>' + label + '</div></div>';
@@ -187,11 +236,15 @@
         }).join('') + '</tbody></table></div>';
       document.getElementById('appTable').querySelectorAll('.status-sel').forEach(function(s) {
         s.addEventListener('change', function() {
-          fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({status:this.value}) }).then(load);
+          fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({status:this.value}) })
+            .then(load).then(refreshDashboardIfVisible);
         });
       });
       document.getElementById('appTable').querySelectorAll('[data-del]').forEach(function(b) {
-        b.addEventListener('click', function() { if(!confirm('确定删除?')) return; fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() }).then(load); });
+        b.addEventListener('click', function() { if(!confirm('确定删除?')) return;
+          fetch(SUPABASE_URL+'/rest/v1/applications?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() })
+            .then(load).then(refreshDashboardIfVisible);
+        });
       });
     }
 
@@ -237,10 +290,16 @@
             + '<td>' + (!m.is_handled ? '<button class="btn btn-sm mark-btn" data-id="'+m.id+'">处理</button> ' : '') + '<button class="btn btn-sm" style="color:#DC2626;" data-del="'+m.id+'">删除</button></td></tr>';
         }).join('') + '</tbody></table></div>';
       document.getElementById('msgTable').querySelectorAll('.mark-btn').forEach(function(b) {
-        b.addEventListener('click', function() { fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({is_handled:true}) }).then(load); });
+        b.addEventListener('click', function() {
+          fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({is_handled:true}) })
+            .then(load).then(refreshDashboardIfVisible);
+        });
       });
       document.getElementById('msgTable').querySelectorAll('[data-del]').forEach(function(b) {
-        b.addEventListener('click', function() { if(!confirm('确定删除?')) return; fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() }).then(load); });
+        b.addEventListener('click', function() { if(!confirm('确定删除?')) return;
+          fetch(SUPABASE_URL+'/rest/v1/messages?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() })
+            .then(load).then(refreshDashboardIfVisible);
+        });
       });
     }
 
@@ -273,12 +332,14 @@
 
       document.getElementById('actTable').querySelectorAll('.pub-btn').forEach(function(b) {
         b.addEventListener('click', function() {
-          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({is_published: this.getAttribute('data-pub') === 'true'}) }).then(load);
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({is_published: this.getAttribute('data-pub') === 'true'}) })
+            .then(load).then(refreshDashboardIfVisible);
         });
       });
       document.getElementById('actTable').querySelectorAll('.show-btn').forEach(function(b) {
         b.addEventListener('click', function() {
-          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({show_on_home: this.getAttribute('data-show') === 'true'}) }).then(load);
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({show_on_home: this.getAttribute('data-show') === 'true'}) })
+            .then(load).then(refreshDashboardIfVisible);
         });
       });
       document.getElementById('actTable').querySelectorAll('.edit-btn').forEach(function(b) {
@@ -288,7 +349,10 @@
         });
       });
       document.getElementById('actTable').querySelectorAll('[data-del]').forEach(function(b) {
-        b.addEventListener('click', function() { if(!confirm('确定删除?')) return; fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() }).then(load); });
+        b.addEventListener('click', function() { if(!confirm('确定删除?')) return;
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-del'), { method:'DELETE', headers:headers() })
+            .then(load).then(refreshDashboardIfVisible);
+        });
       });
     }
 
@@ -323,7 +387,7 @@
       var url = isEdit ? SUPABASE_URL+'/rest/v1/activities?id=eq.'+act.id : SUPABASE_URL+'/rest/v1/activities';
       var method = isEdit ? 'PATCH' : 'POST';
       if (!isEdit) { d.show_on_home = true; d.is_published = true; }
-      fetch(url, { method: method, headers: headers(), body: JSON.stringify(d) }).then(function() { overlay.remove(); cb(); });
+      fetch(url, { method: method, headers: headers(), body: JSON.stringify(d) }).then(function() { overlay.remove(); cb(); loadDashboard(); });
     });
     function inp(id, label, val, type) { return '<div class="form-group"><label>' + label + '</label><input id="' + id + '" value="' + e(val) + '"' + (type ? ' type="' + type + '"' : '') + '></div>'; }
     function gv(id) { var el = document.getElementById(id); return el ? el.value : ''; }
@@ -340,11 +404,11 @@
           return '<div class="form-group" style="margin-bottom:12px;"><label>' + e(s.label || s.key) + '</label><input type="number" id="st_' + s.key + '" value="' + s.value + '"></div>';
         }).join('') + '<button id="saveStatsBtn" class="btn btn-primary btn-sm" style="margin-top:12px;">保存</button>';
         document.getElementById('saveStatsBtn').addEventListener('click', function() {
-          data.forEach(function(s) {
+          var promises = data.map(function(s) {
             var v = parseInt(document.getElementById('st_' + s.key).value)||0;
-            fetch(SUPABASE_URL+'/rest/v1/site_stats?key=eq.'+s.key, { method:'PATCH', headers:headers(), body:JSON.stringify({value:v}) });
+            return fetch(SUPABASE_URL+'/rest/v1/site_stats?key=eq.'+s.key, { method:'PATCH', headers:headers(), body:JSON.stringify({value:v}) });
           });
-          alert('已保存');
+          Promise.all(promises).then(function() { alert('已保存'); loadDashboard(); });
         });
       });
   }
