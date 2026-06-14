@@ -6,8 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <title>管理登录 | 建工青协</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css?v=cloudbase-domestic-20260615">
 </head>
 <body class="login-page">
 
@@ -18,7 +18,7 @@
   <form id="loginForm" autocomplete="off">
     <div class="form-group">
       <label for="email">管理员邮箱</label>
-      <input type="email" id="email" required placeholder="admin@gyzy.org" autocomplete="email" value="admin@gyzy.org">
+      <input type="email" id="email" required placeholder="admin@gyzy.org" autocomplete="email">
     </div>
     <div class="form-group">
       <label for="password">密码</label>
@@ -32,123 +32,9 @@
   <a href="index.html" class="back-link">&larr; 返回前台首页</a>
 </div>
 
-<script>
-(function () {
-  'use strict';
-
-  var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
-  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
-
-  var d = document.getElementById('loginDebug');
-
-  function log(msg) { d.textContent = msg; console.log('[LOGIN] ' + msg); }
-
-  // 如果已登录且有 token，直接跳转
-  var token = localStorage.getItem('gyzy_token');
-  if (token) {
-    log('检测到已有 token，验证中...');
-    fetch(SUPABASE_URL + '/auth/v1/user', {
-      headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + token }
-    }).then(function(r) {
-      if (r.ok) {
-        log('Token 有效，跳转后台');
-        window.location.href = 'admin.html';
-      } else {
-        log('Token 已过期，请重新登录');
-        localStorage.removeItem('gyzy_token');
-      }
-    }).catch(function() { log(''); });
-  }
-
-  document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var btn = document.getElementById('loginBtn');
-    var err = document.getElementById('loginError');
-    btn.disabled = true;
-    btn.textContent = '连接中...';
-    err.textContent = '';
-    log('');
-
-    var email = document.getElementById('email').value.trim();
-    var password = document.getElementById('password').value;
-
-    if (!email) { err.textContent = '请输入邮箱'; btn.disabled = false; btn.textContent = '登录'; return; }
-    if (!password) { err.textContent = '请输入密码'; btn.disabled = false; btn.textContent = '登录'; return; }
-
-    log('正在连接 Supabase...');
-
-    // 带超时的 fetch
-    var controller = new AbortController();
-    var timeout = setTimeout(function() { controller.abort(); }, 15000);
-
-    fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
-      method: 'POST',
-      headers: { 'apikey': ANON_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: password }),
-      signal: controller.signal
-    })
-    .then(function(r) {
-      clearTimeout(timeout);
-      log('服务器响应: HTTP ' + r.status);
-      return r.json().then(function(data) {
-        if (!r.ok) {
-          var msg = data.error_description || data.msg || '';
-          if (msg.includes('Invalid login') || msg.includes('invalid')) {
-            throw new Error('账号不存在或密码错误');
-          } else if (msg.includes('not confirmed') || msg.includes('not verified')) {
-            throw new Error('邮箱未确认，请检查邮箱验证链接');
-          } else if (msg.includes('rate') || msg.includes('limit')) {
-            throw new Error('登录太频繁，请稍后再试');
-          } else {
-            throw new Error(msg || '登录失败 (HTTP ' + r.status + ')');
-          }
-        }
-        return data;
-      });
-    })
-    .then(function(data) {
-      log('登录成功，保存 token...');
-      localStorage.setItem('gyzy_token', data.access_token);
-      localStorage.setItem('gyzy_refresh', data.refresh_token);
-      localStorage.setItem('gyzy_user_email', data.user.email);
-
-      // 检查管理员身份
-      log('验证管理员权限...');
-      return fetch(SUPABASE_URL + '/rest/v1/admin_users?id=eq.' + data.user.id, {
-        headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + data.access_token }
-      }).then(function(r) { return r.json(); });
-    })
-    .then(function(admins) {
-      if (!admins || !admins.length) {
-        localStorage.clear();
-        log('');
-        throw new Error('当前账号无后台管理权限。请使用管理员账号登录。');
-      }
-      log('管理员验证通过 (' + admins[0].role + ')，跳转...');
-      window.location.href = 'admin.html';
-    })
-    .catch(function(ex) {
-      clearTimeout(timeout);
-      if (ex.name === 'AbortError') {
-        log('');
-        err.textContent = '连接超时。Supabase 服务器可能无法访问，请检查网络。';
-      } else if (ex.message.includes('Failed to fetch') || ex.message.includes('NetworkError')) {
-        log('');
-        err.textContent = '网络连接失败。请检查网络后重试。';
-      } else if (ex.message.includes('CORS')) {
-        log('');
-        err.textContent = '跨域请求被阻止，请检查网络设置。';
-      } else {
-        log('');
-        err.textContent = ex.message;
-      }
-    })
-    .finally(function() {
-      btn.disabled = false;
-      btn.textContent = '登录';
-    });
-  });
-})();
-</script>
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+<script src="js/backend-config.js?v=cloudbase-domestic-20260615"></script>
+<script src="js/cloudbase-backend.js?v=cloudbase-domestic-20260615"></script>
+<script src="js/login-cloudbase.js?v=cloudbase-domestic-20260615"></script>
 </body>
 </html>

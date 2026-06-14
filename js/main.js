@@ -1,33 +1,20 @@
 /**
  * 建工青协官网前台脚本
- * Handles navigation, Supabase-backed content, activity cards, and forms.
+ * 数据通过 window.gyzyBackend 访问 CloudBase；未配置时使用静态兜底。
  */
 (function () {
   'use strict';
 
-  var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
-  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
-
-  function apiHeaders(extra) {
-    return Object.assign({
-      apikey: ANON_KEY,
-      Authorization: 'Bearer ' + ANON_KEY
-    }, extra || {});
-  }
-
-  async function safeJson(response) {
-    var text = await response.text();
-    if (!response.ok) {
-      throw new Error(text || ('HTTP ' + response.status));
+  var backend = window.gyzyBackend;
+  var defaults = (backend && backend.defaults) || {
+    heroImage: 'assets/images/hero-building.png',
+    stats: {
+      service_hours: 3200,
+      volunteers_count: 1288,
+      activities_count: 32,
+      covered_people: 2000
     }
-    if (!text) return null;
-    try {
-      return JSON.parse(text);
-    } catch (err) {
-      console.error('响应不是合法 JSON:', text);
-      return null;
-    }
-  }
+  };
 
   function esc(value) {
     return String(value == null ? '' : value)
@@ -36,6 +23,18 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  async function safeJson(response) {
+    var text = await response.text();
+    if (!response.ok) throw new Error(text || ('HTTP ' + response.status));
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      console.error('响应不是合法 JSON:', text);
+      return null;
+    }
   }
 
   function formatDate(value) {
@@ -59,6 +58,10 @@
     if (!el) return;
     el.textContent = message || '';
     el.className = 'form-msg ' + (type || '');
+  }
+
+  function backendReady() {
+    return backend && typeof backend.isConfigured === 'function' && backend.isConfigured();
   }
 
   function initNav() {
@@ -113,7 +116,7 @@
   async function loadHeroImage() {
     var hero = document.querySelector('.hero');
     if (!hero) return;
-    var fallback = 'assets/images/hero-building.png';
+    var fallback = defaults.heroImage || 'assets/images/hero-building.png';
 
     function setHero(url) {
       hero.style.backgroundImage =
@@ -121,31 +124,29 @@
     }
 
     try {
-      var res = await fetch(SUPABASE_URL + '/rest/v1/site_settings?select=value&key=eq.hero_image_url', {
-        headers: apiHeaders()
-      });
-      var data = await safeJson(res);
-      setHero(data && data[0] && data[0].value ? data[0].value : fallback);
+      if (!backendReady()) {
+        setHero(fallback);
+        return;
+      }
+      var value = await backend.getSetting('hero_image_url');
+      var imageUrl = value ? await backend.resolveFileUrl(value) : fallback;
+      setHero(imageUrl || fallback);
     } catch (err) {
-      console.warn('首页 Banner 加载失败，使用默认背景:', err.message);
+      console.warn('首页 Banner 加载失败，使用默认背景：', err.message || err);
       setHero(fallback);
     }
   }
 
   async function loadStats() {
     try {
-      var res = await fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: apiHeaders() });
-      var data = await safeJson(res);
-      if (!Array.isArray(data) || data.length === 0) return;
-
-      var map = {};
-      data.forEach(function (s) { map[s.key] = Number(s.value); });
-      setStat('service_hours', map.service_hours);
-      setStat('volunteers_count', map.volunteers_count || map.volunteers || map.registered_volunteers);
-      setStat('activities_count', map.activities_count || map.yearly_activities);
-      setStat('covered_people', map.covered_people || map.people_served);
+      if (!backendReady()) return;
+      var stats = await backend.getSiteStats();
+      setStat('service_hours', stats.service_hours);
+      setStat('volunteers_count', stats.volunteers_count || stats.volunteers || stats.registered_volunteers);
+      setStat('activities_count', stats.activities_count || stats.yearly_activities);
+      setStat('covered_people', stats.covered_people || stats.people_served);
     } catch (err) {
-      console.warn('统计数据加载失败，保留 HTML 默认值:', err.message);
+      console.warn('统计数据加载失败，保留 HTML 默认值：', err.message || err);
     }
   }
 
@@ -156,48 +157,58 @@
     el.textContent = num + '+';
   }
 
+  async function loadLocalActivities() {
+    var localRes = await fetch('data/activities.json', { cache: 'no-store' });
+    var localData = await safeJson(localRes);
+    return Array.isArray(localData) ? localData : [];
+  }
+
   async function loadActivities(revealObserver) {
     var container = document.getElementById('activitiesGrid');
     if (!container) return;
     container.innerHTML = '<div class="activities-loading">活动加载中...</div>';
 
     try {
-      var url = SUPABASE_URL + '/rest/v1/activities?select=*&is_published=eq.true&order=is_featured.desc,event_date.desc&limit=6';
-      var res = await fetch(url, { headers: apiHeaders() });
-      var data = await safeJson(res);
-
-      if (!Array.isArray(data) || data.length === 0) {
-        var fallbackRes = await fetch(SUPABASE_URL + '/rest/v1/activities?select=*&is_published=eq.true&order=event_date.desc&limit=6', {
-          headers: apiHeaders()
-        });
-        data = await safeJson(fallbackRes);
+      var data = [];
+      if (backendReady()) {
+        data = await backend.getPublicActivities(6);
+      } else {
+        data = await loadLocalActivities();
       }
-
-      if (!Array.isArray(data) || data.length === 0) {
-        renderActivities(container, [], revealObserver);
-        return;
-      }
-      renderActivities(container, data, revealObserver);
+      await renderActivities(container, data, revealObserver);
     } catch (err) {
       console.error('活动加载失败:', err);
       try {
-        var localRes = await fetch('data/activities.json');
-        var localData = await safeJson(localRes);
-        renderActivities(container, Array.isArray(localData) ? localData : [], revealObserver);
+        await renderActivities(container, await loadLocalActivities(), revealObserver);
       } catch (localErr) {
+        console.error('本地活动兜底也加载失败:', localErr);
         container.innerHTML = '<div class="activities-error">活动加载失败，请稍后重试</div>';
       }
     }
   }
 
-  function renderActivities(container, activities, revealObserver) {
+  async function getCoverUrl(activity) {
+    var value = activity.cover_image || activity.image || '';
+    if (!value) return '';
+    if (backendReady() && !/^https?:\/\//i.test(value) && !/^data:/i.test(value)) {
+      try {
+        return await backend.resolveFileUrl(value);
+      } catch (err) {
+        console.warn('活动封面解析失败：', err.message || err);
+      }
+    }
+    return value;
+  }
+
+  async function renderActivities(container, activities, revealObserver) {
     if (!Array.isArray(activities) || activities.length === 0) {
       container.innerHTML = '<div class="activities-empty">暂无活动内容</div>';
       return;
     }
 
-    container.innerHTML = activities.map(function (activity) {
-      var id = encodeURIComponent(activity.id || '');
+    var cards = await Promise.all(activities.map(async function (activity) {
+      var idRaw = activity._id || activity.id || '';
+      var id = encodeURIComponent(idRaw);
       var title = esc(activity.title || '未命名活动');
       var category = esc(activity.category || '活动');
       var date = formatDate(activity.date || activity.event_date);
@@ -205,7 +216,8 @@
       var volunteers = Number(activity.volunteers_count != null ? activity.volunteers_count : activity.participants) || 0;
       var hours = Number(activity.service_hours != null ? activity.service_hours : activity.serviceHours) || 0;
       var desc = esc(activity.description || '暂无活动简介');
-      var cover = activity.cover_image || activity.image ? esc(activity.cover_image || activity.image) : '';
+      var cover = await getCoverUrl(activity);
+      cover = cover ? esc(cover) : '';
       var detailUrl = 'activity-detail.html?id=' + id;
       var coverHtml = cover
         ? '<img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><div class="activity-cover-placeholder" style="display:none;">建工青协</div>'
@@ -225,12 +237,29 @@
         + '<p class="activity-desc">' + desc + '</p>'
         + '<a class="activity-more" href="' + detailUrl + '">查看详情 &rarr;</a>'
         + '</div></article>';
-    }).join('');
+    }));
 
+    container.innerHTML = cards.join('');
     if (revealObserver) {
       container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
     } else {
       container.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  }
+
+  async function sendMailFallback(data, subject) {
+    try {
+      var fd = new FormData();
+      Object.keys(data).forEach(function (key) { fd.append(key, data[key]); });
+      fd.append('_subject', subject);
+      var mailRes = await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: fd
+      });
+      return mailRes.ok;
+    } catch (err) {
+      return false;
     }
   }
 
@@ -274,40 +303,22 @@
       btn.textContent = '提交中...';
       showFormMessage(msg, '', '');
 
-      var supabaseOk = false;
-      var mailOk = false;
+      var cloudOk = false;
       try {
-        var res = await fetch(SUPABASE_URL + '/rest/v1/applications', {
-          method: 'POST',
-          headers: apiHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-          body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error(await res.text());
-        supabaseOk = true;
+        if (!backendReady()) throw new Error('国内后端未配置');
+        await backend.submitApplication(data);
+        cloudOk = true;
       } catch (err) {
-        console.error('Supabase applications insert failed:', err.message);
+        console.error('CloudBase applications insert failed:', err.message || err);
       }
 
-      try {
-        var fd = new FormData();
-        Object.keys(data).forEach(function (key) { fd.append(key, data[key]); });
-        var mailRes = await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
-          method: 'POST',
-          headers: { Accept: 'application/json' },
-          body: fd
-        });
-        mailOk = mailRes.ok;
-      } catch (err) {
-        mailOk = false;
-      }
-
-      if (supabaseOk) {
+      var mailOk = cloudOk ? false : await sendMailFallback(data, '建工青协报名表');
+      if (cloudOk) {
         setCooldown('lastApplySubmitTime');
         showFormMessage(msg, '报名提交成功！后台已收到，我们会尽快与你联系。', 'success');
         form.reset();
       } else if (mailOk) {
-        setCooldown('lastApplySubmitTime');
-        showFormMessage(msg, '报名已通过邮件发送，但后台未同步，请管理员检查数据库配置。', 'error');
+        showFormMessage(msg, '报名已通过邮件发送，但后台未同步，请管理员检查国内数据库配置。', 'error');
       } else {
         showFormMessage(msg, '报名提交失败，请稍后重试。', 'error');
       }
@@ -355,43 +366,22 @@
       btn.textContent = '提交中...';
       showFormMessage(msg, '', '');
 
-      var supabaseOk = false;
-      var mailOk = false;
+      var cloudOk = false;
       try {
-        var res = await fetch(SUPABASE_URL + '/rest/v1/messages', {
-          method: 'POST',
-          headers: apiHeaders({ 'Content-Type': 'application/json', Prefer: 'return=representation' }),
-          body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error(await res.text());
-        console.log('Supabase 留言写入成功:', await res.text().catch(function () { return ''; }));
-        supabaseOk = true;
+        if (!backendReady()) throw new Error('国内后端未配置');
+        await backend.submitMessage(data);
+        cloudOk = true;
       } catch (err) {
-        console.error('Supabase messages insert failed:', err.message);
+        console.error('CloudBase messages insert failed:', err.message || err);
       }
 
-      try {
-        var fd = new FormData();
-        fd.append('name', data.name);
-        fd.append('contact', data.contact);
-        fd.append('content', data.content);
-        var mailRes = await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
-          method: 'POST',
-          headers: { Accept: 'application/json' },
-          body: fd
-        });
-        mailOk = mailRes.ok;
-      } catch (err) {
-        mailOk = false;
-      }
-
-      if (supabaseOk) {
+      var mailOk = cloudOk ? false : await sendMailFallback(data, '建工青协留言反馈');
+      if (cloudOk) {
         setCooldown('lastMessageSubmitTime');
         showFormMessage(msg, '留言提交成功，后台已收到。', 'success');
         form.reset();
       } else if (mailOk) {
-        setCooldown('lastMessageSubmitTime');
-        showFormMessage(msg, '留言已通过邮件发送，但后台未同步，请管理员检查数据库配置。', 'error');
+        showFormMessage(msg, '留言已通过邮件发送，但后台未同步，请管理员检查国内数据库配置。', 'error');
       } else {
         showFormMessage(msg, '留言提交失败，请稍后重试。', 'error');
       }
