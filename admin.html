@@ -8,19 +8,18 @@
 <title>管理后台 | 建工青协</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/admin.css?v=ui-polish-20260614">
 <style>
 /* extra admin styles */
 .form-group textarea { resize: vertical; min-height: 60px; }
 .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-/* Hide file input visually but keep it focusable via label */
-#heroFileInput { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 /* Cover upload area */
 .cover-upload-area { border: 2px dashed #d1d5db; border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 200ms; background: #fafafa; position: relative; }
 .cover-upload-area:hover, .cover-upload-area.drag-over { border-color: #F59E0B; background: #FFFBEB; }
 .cover-upload-icon { font-size: 32px; margin-bottom: 8px; }
 .cover-upload-area p { color: #666; font-size: 14px; margin: 0; }
 .cover-upload-area small { color: #999; font-size: 12px; }
+.hero-file-input { display:block; width:100%; max-width:360px; margin:14px auto 0; font-size:13px; cursor:pointer; }
 .cover-preview { position: relative; border-radius: 12px; overflow: hidden; }
 .cover-preview img { width: 100%; height: 180px; object-fit: cover; display: block; }
 .cover-preview-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: center; }
@@ -36,15 +35,15 @@
   <aside class="admin-sidebar">
     <div class="admin-sidebar-brand">建工青协</div>
     <nav class="admin-nav">
-      <div class="admin-nav-item active" data-tab="dashboard"><span class="admin-nav-icon">📊</span><span>仪表盘</span></div>
-      <div class="admin-nav-item" data-tab="applications"><span class="admin-nav-icon">📋</span><span>报名管理</span></div>
-      <div class="admin-nav-item" data-tab="messages"><span class="admin-nav-icon">💬</span><span>留言管理</span></div>
-      <div class="admin-nav-item" data-tab="activities"><span class="admin-nav-icon">📅</span><span>活动管理</span></div>
-      <div class="admin-nav-item" data-tab="stats"><span class="admin-nav-icon">📈</span><span>统计管理</span></div>
-      <div class="admin-nav-item" data-tab="hero"><span class="admin-nav-icon">🖼️</span><span>首页设置</span></div>
+      <div class="admin-nav-item active" data-tab="dashboard"><span class="admin-nav-icon">D</span><span>仪表盘</span></div>
+      <div class="admin-nav-item" data-tab="applications"><span class="admin-nav-icon">A</span><span>报名管理</span></div>
+      <div class="admin-nav-item" data-tab="messages"><span class="admin-nav-icon">M</span><span>留言管理</span></div>
+      <div class="admin-nav-item" data-tab="activities"><span class="admin-nav-icon">V</span><span>活动管理</span></div>
+      <div class="admin-nav-item" data-tab="stats"><span class="admin-nav-icon">S</span><span>统计管理</span></div>
+      <div class="admin-nav-item" data-tab="hero"><span class="admin-nav-icon">H</span><span>首页设置</span></div>
     </nav>
     <div class="admin-sidebar-footer">
-      <button id="logoutBtn" class="btn btn-outline btn-sm" style="width:100%;color:#fff;border-color:rgba(255,255,255,0.2);">🚪 退出登录</button>
+      <button id="logoutBtn" class="btn btn-outline btn-sm" style="width:100%;color:#fff;border-color:rgba(255,255,255,0.2);">退出登录</button>
     </div>
   </aside>
 
@@ -53,7 +52,7 @@
       <h1>管理后台</h1>
       <div class="admin-topbar-right">
         <span id="adminUserEmail">管理员</span>
-        <a href="index.html" class="btn btn-outline btn-sm">🏠 前台</a>
+        <a href="index.html" class="btn btn-outline btn-sm">前台</a>
       </div>
     </header>
     <div class="admin-content" id="adminContent"><div class="admin-loading">验证登录...</div></div>
@@ -132,7 +131,7 @@
         else if (currentTab === 'messages') loadMessages();
         else if (currentTab === 'activities') loadActivities();
         else if (currentTab === 'stats') loadStats();
-        else if (currentTab === 'hero') loadHeroSettings();
+        else if (currentTab === 'hero') loadHeroSettingsV2();
       });
     });
   }
@@ -243,6 +242,7 @@
       var labels = { pending: '待审核', approved: '已通过', rejected: '已拒绝', contacted: '已联系' };
       t.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>姓名</th><th>专业/班级</th><th>联系方式</th><th>意向部门</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>'
         + data.map(function(a) {
+          var featured = a.is_featured === true || a.show_on_home === true;
           return '<tr><td>' + e(a.name) + '</td><td>' + e(a.department) + '</td><td>' + e(a.contact) + '</td><td>' + e(a.direction) + '</td>'
             + '<td><select class="status-sel" data-id="' + a.id + '">' + ['pending','approved','rejected','contacted'].map(function(s){ return '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+(labels[s]||s)+'</option>'; }).join('') + '</select></td>'
             + '<td>' + fmtDate(a.created_at) + '</td>'
@@ -338,9 +338,10 @@
       if (!data || !data.length) { t.innerHTML = '<p style="color:#999;padding:20px;">暂无活动</p>'; return; }
       t.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>标题</th><th>分类</th><th>日期</th><th>发布</th><th>首页</th><th>操作</th></tr></thead><tbody>'
         + data.map(function(a) {
+          var featured = a.is_featured === true || a.show_on_home === true;
           return '<tr><td>' + e(a.title) + '</td><td>' + e(a.category) + '</td><td>' + e(a.event_date) + '</td>'
-            + '<td><button class="btn btn-sm pub-btn" data-id="' + a.id + '" data-pub="' + (!a.is_published) + '">' + (a.is_published !== false ? '✅ 已发布' : '❌ 下架') + '</button></td>'
-            + '<td><button class="btn btn-sm show-btn" data-id="' + a.id + '" data-show="' + (!a.show_on_home) + '">' + (a.show_on_home ? '✅' : '❌') + '</button></td>'
+            + '<td><button class="btn btn-sm pub-btn" data-id="' + a.id + '" data-pub="' + (!a.is_published) + '">' + (a.is_published !== false ? '\u5df2\u53d1\u5e03' : '\u5df2\u4e0b\u67b6') + '</button></td>'
+            + '<td><button class="btn btn-sm show-btn" data-id="' + a.id + '" data-show="' + (!featured) + '">' + (featured ? '\u5c55\u793a' : '\u9690\u85cf') + '</button></td>'
             + '<td><button class="btn btn-sm edit-btn" data-id="' + a.id + '">编辑</button> <button class="btn btn-sm" style="color:#DC2626;" data-del="' + a.id + '">删除</button></td></tr>';
         }).join('') + '</tbody></table></div>';
 
@@ -352,7 +353,7 @@
       });
       document.getElementById('actTable').querySelectorAll('.show-btn').forEach(function(b) {
         b.addEventListener('click', function() {
-          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({show_on_home: this.getAttribute('data-show') === 'true'}) })
+          fetch(SUPABASE_URL+'/rest/v1/activities?id=eq.'+this.getAttribute('data-id'), { method:'PATCH', headers:headers(), body:JSON.stringify({show_on_home: this.getAttribute('data-show') === 'true', is_featured: this.getAttribute('data-show') === 'true'}) })
             .then(load).then(refreshDashboardIfVisible);
         });
       });
@@ -470,15 +471,18 @@
         // 上传到 Supabase Storage
         var ext = coverFile.name.split('.').pop();
         var fname = 'covers/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
-        var formData = new FormData();
-        formData.append('file', coverFile);
         try {
           var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/activity-covers/' + fname, {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token, 'apikey': ANON_KEY },
+            headers: { 'Authorization': 'Bearer ' + token, 'apikey': ANON_KEY, 'Content-Type': coverFile.type, 'x-upsert': 'true' },
             body: coverFile
           });
-          if (!upRes.ok) { var upErr = await upRes.json().catch(function(){return {};}); throw new Error(upErr.message || '上传失败'); }
+          if (!upRes.ok) {
+            var upText = await upRes.text();
+            var upErr = {};
+            try { upErr = upText ? JSON.parse(upText) : {}; } catch(parseErr) {}
+            throw new Error(upErr.message || upErr.error || '上传失败');
+          }
           d.cover_image = SUPABASE_URL + '/storage/v1/object/public/activity-covers/' + fname;
         } catch(e) { alert('封面上传失败: ' + (e.message || '')); return; }
       } else {
@@ -487,7 +491,7 @@
 
       var url = isEdit ? SUPABASE_URL+'/rest/v1/activities?id=eq.'+act.id : SUPABASE_URL+'/rest/v1/activities';
       var method = isEdit ? 'PATCH' : 'POST';
-      if (!isEdit) { d.show_on_home = true; d.is_published = true; }
+      if (!isEdit) { d.show_on_home = true; d.is_featured = true; d.is_published = true; }
       fetch(url, { method: method, headers: headers(), body: JSON.stringify(d) })
         .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); })
         .then(function() { overlay.remove(); cb(); refreshDashboardIfVisible(); })
@@ -517,153 +521,179 @@
       });
   }
 
-  // ====== 首页设置 ======
-  function loadHeroSettings() {
-    loadContent('<h2>首页设置</h2><div id="heroSettingsForm"><div class="admin-loading">加载中...</div></div>');
+  // ====== 首页设置新版：可靠文件选择 + 拖拽 + Storage 上传 ======
+  function loadHeroSettingsV2() {
+    var selectedHeroFile = null;
+    loadContent('<h2>首页设置</h2>'
+      + '<div class="admin-card" style="background:#fff;border:1px solid #E7E1DA;border-radius:8px;padding:20px;max-width:760px;">'
+      + '<h3 style="font-size:16px;margin-bottom:10px;">首页 Banner 图片</h3>'
+      + '<p style="color:#666;font-size:13px;margin-bottom:16px;">上传后将保存到 Supabase Storage 的 <code>site-assets</code> bucket，并写入 <code>site_settings.hero_image_url</code>。</p>'
+      + '<div id="heroUploadArea" class="cover-upload-area" style="max-width:680px;">'
+      + '<div id="heroPlaceholder">'
+      + '<div class="cover-upload-icon">图片</div>'
+      + '<p>点击下方文件框选择图片，或直接拖拽图片到这里</p>'
+      + '<small>建议横向图片 16:9 或 21:9，JPG / PNG / WEBP，最大 5MB</small>'
+      + '<input type="file" id="heroFileInput" class="hero-file-input" accept="image/jpeg,image/png,image/webp">'
+      + '</div>'
+      + '<div id="heroPreviewBox" class="cover-preview" style="display:none;"></div>'
+      + '</div>'
+      + '<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">'
+      + '<button id="saveHeroBtn" class="btn btn-primary btn-sm" disabled>保存为首页 Banner</button>'
+      + '<button id="changeHeroBtn" class="btn btn-outline btn-sm" type="button">更换图片</button>'
+      + '<button id="resetHeroBtn" class="btn btn-outline btn-sm" type="button">恢复默认</button>'
+      + '</div>'
+      + '<p id="heroMsg" style="margin-top:10px;font-size:13px;min-height:20px;"></p>'
+      + '</div>');
 
-    fetch(SUPABASE_URL + '/rest/v1/site_settings?select=*&key=eq.hero_image_url', { headers: headers() })
-      .then(function(r){ return r.json(); })
+    var heroArea = document.getElementById('heroUploadArea');
+    var heroInput = document.getElementById('heroFileInput');
+    var heroPlaceholder = document.getElementById('heroPlaceholder');
+    var heroPreviewBox = document.getElementById('heroPreviewBox');
+    var saveBtn = document.getElementById('saveHeroBtn');
+    var changeBtn = document.getElementById('changeHeroBtn');
+    var resetBtn = document.getElementById('resetHeroBtn');
+    var msgEl = document.getElementById('heroMsg');
+
+    function setMsg(text, ok) {
+      msgEl.textContent = text || '';
+      msgEl.style.color = ok ? '#16A34A' : '#DC2626';
+    }
+
+    function showHeroPreview(src, fromExisting) {
+      heroPlaceholder.style.display = 'none';
+      heroPreviewBox.style.display = 'block';
+      heroPreviewBox.innerHTML = '<img src="' + e(src) + '" alt="首页 Banner 预览" style="width:100%;height:220px;object-fit:cover;border-radius:8px;">';
+      saveBtn.disabled = !!fromExisting;
+      saveBtn.textContent = fromExisting ? '请选择新图片后保存' : '保存为首页 Banner';
+    }
+
+    function handleHeroFile(file) {
+      if (!file) return;
+      var allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      if (allowed.indexOf(file.type) === -1) {
+        setMsg('只支持 JPG、PNG、WEBP 图片', false);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setMsg('图片不能超过 5MB', false);
+        return;
+      }
+      selectedHeroFile = file;
+      showHeroPreview(URL.createObjectURL(file), false);
+      setMsg('已选择图片：' + file.name, true);
+      console.log('已选择首页 Banner 图片:', file.name, file.type, file.size);
+    }
+
+    heroInput.addEventListener('change', function() {
+      handleHeroFile(this.files && this.files[0]);
+    });
+    changeBtn.addEventListener('click', function() {
+      heroInput.click();
+    });
+    heroArea.addEventListener('dragover', function(evt) {
+      evt.preventDefault();
+      heroArea.classList.add('drag-over');
+    });
+    heroArea.addEventListener('dragleave', function() {
+      heroArea.classList.remove('drag-over');
+    });
+    heroArea.addEventListener('drop', function(evt) {
+      evt.preventDefault();
+      heroArea.classList.remove('drag-over');
+      handleHeroFile(evt.dataTransfer.files && evt.dataTransfer.files[0]);
+    });
+
+    saveBtn.addEventListener('click', async function() {
+      if (!selectedHeroFile) {
+        setMsg('请先选择一张首页 Banner 图片', false);
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = '上传中...';
+      setMsg('正在上传图片...', true);
+
+      try {
+        var ext = (selectedHeroFile.name.split('.').pop() || 'jpg').toLowerCase();
+        var filePath = 'hero/hero-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+        var uploadHeaders = {
+          Authorization: 'Bearer ' + token,
+          apikey: ANON_KEY,
+          'Content-Type': selectedHeroFile.type,
+          'x-upsert': 'true',
+          'cache-control': '3600'
+        };
+        var uploadRes = await fetch(SUPABASE_URL + '/storage/v1/object/site-assets/' + filePath, {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: selectedHeroFile
+        });
+        if (!uploadRes.ok) {
+          var uploadText = await uploadRes.text();
+          var uploadError = {};
+          try { uploadError = uploadText ? JSON.parse(uploadText) : {}; } catch (err) {}
+          console.error('Storage upload error:', uploadRes.status, uploadText);
+          throw new Error(uploadError.message || uploadError.error || ('图片上传失败 HTTP ' + uploadRes.status));
+        }
+
+        var publicUrl = SUPABASE_URL + '/storage/v1/object/public/site-assets/' + filePath;
+        setMsg('图片已上传，正在保存设置...', true);
+        var saveHeaders = headers();
+        saveHeaders.Prefer = 'resolution=merge-duplicates,return=minimal';
+        var saveRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings?on_conflict=key', {
+          method: 'POST',
+          headers: saveHeaders,
+          body: JSON.stringify({ key: 'hero_image_url', value: publicUrl, updated_at: new Date().toISOString() })
+        });
+        if (!saveRes.ok) {
+          var saveText = await saveRes.text();
+          var saveError = {};
+          try { saveError = saveText ? JSON.parse(saveText) : {}; } catch (err2) {}
+          console.error('site_settings save error:', saveRes.status, saveText);
+          throw new Error(saveError.message || saveError.error || ('设置保存失败 HTTP ' + saveRes.status));
+        }
+
+        selectedHeroFile = null;
+        showHeroPreview(publicUrl, true);
+        setMsg('首页 Banner 已更新，请打开前台并 Ctrl + F5 强制刷新。', true);
+      } catch (err) {
+        console.error('首页 Banner 保存失败:', err);
+        setMsg(err.message || '保存首页 Banner 失败', false);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '保存为首页 Banner';
+      }
+    });
+
+    resetBtn.addEventListener('click', async function() {
+      if (!confirm('确定恢复默认 Banner 吗？')) return;
+      try {
+        var saveHeaders = headers();
+        saveHeaders.Prefer = 'resolution=merge-duplicates,return=minimal';
+        var res = await fetch(SUPABASE_URL + '/rest/v1/site_settings?on_conflict=key', {
+          method: 'POST',
+          headers: saveHeaders,
+          body: JSON.stringify({ key: 'hero_image_url', value: '', updated_at: new Date().toISOString() })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        selectedHeroFile = null;
+        heroPlaceholder.style.display = 'block';
+        heroPreviewBox.style.display = 'none';
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存为首页 Banner';
+        setMsg('已恢复默认首页 Banner。', true);
+      } catch (err) {
+        setMsg('恢复默认失败：' + (err.message || ''), false);
+      }
+    });
+
+    fetch(SUPABASE_URL + '/rest/v1/site_settings?select=value&key=eq.hero_image_url', { headers: headers() })
+      .then(function(r) { return r.text().then(function(text) { return text ? JSON.parse(text) : []; }); })
       .then(function(data) {
-        var currentUrl = (data && data[0]) ? data[0].value : '';
-        var f = document.getElementById('heroSettingsForm');
-        f.innerHTML = '<p style="margin-bottom:16px;font-weight:600;">首页 Banner 图片</p>'
-          + '<label for="heroFileInput" class="cover-upload-area" id="heroUploadArea" style="max-width:600px;display:block;">'
-          + '<input type="file" id="heroFileInput" accept="image/jpeg,image/png,image/webp">'
-          + '<div id="heroPlaceholder">'
-          + '<div class="cover-upload-icon">🖼️</div>'
-          + '<p>点击或拖拽上传首页大图</p>'
-          + '<small>建议横向图片 16:9 或 21:9，JPG/PNG/WEBP，最大 5MB</small>'
-          + '</div>'
-          + '<div id="heroPreviewBox" class="cover-preview" style="display:none;"></div>'
-          + '</label>'
-          + '<div style="margin-top:16px;display:flex;gap:8px;">'
-          + '<button id="saveHeroBtn" class="btn btn-primary btn-sm" disabled>保存为首页 Banner</button>'
-          + '<button id="resetHeroBtn" class="btn btn-outline btn-sm">恢复默认</button>'
-          + '</div>'
-          + '<p id="heroMsg" style="margin-top:8px;font-size:13px;min-height:20px;"></p>'
-          + '<p style="margin-top:12px;font-size:12px;color:#999;">前台刷新首页即可看到最新 Banner 图片</p>';
-
-        // 显示当前封面
-        if (currentUrl) {
-          showHeroPreview(currentUrl);
-        }
-
-        var heroFile = null;
-        var heroInput = document.getElementById('heroFileInput');
-        var heroPlaceholder = document.getElementById('heroPlaceholder');
-        var heroPreviewBox = document.getElementById('heroPreviewBox');
-        var saveBtn = document.getElementById('saveHeroBtn');
-        var msgEl = document.getElementById('heroMsg');
-
-        function showHeroPreview(src) {
-          heroPlaceholder.style.display = 'none';
-          heroPreviewBox.style.display = 'block';
-          heroPreviewBox.innerHTML = '<img src="' + e(src) + '" alt="Banner 预览" style="width:100%;height:200px;object-fit:cover;border-radius:8px;">'
-            + '<div class="cover-preview-actions">'
-            + '<button type="button" class="btn btn-sm btn-outline" id="changeHeroBtn">更换图片</button>'
-            + '</div>';
-          document.getElementById('changeHeroBtn').addEventListener('click', function(){ heroInput.click(); });
-          saveBtn.disabled = false;
-        }
-
-        function handleHeroFile(file) {
-          if (!file.type.match(/image\/(jpeg|png|webp)/)) { msgEl.textContent = '仅支持 JPG/PNG/WEBP'; msgEl.style.color = '#DC2626'; return; }
-          if (file.size > 5*1024*1024) { msgEl.textContent = '图片不超过 5MB'; msgEl.style.color = '#DC2626'; return; }
-          heroFile = file;
-          var reader = new FileReader();
-          reader.onload = function(e){ showHeroPreview(e.target.result); };
-          reader.readAsDataURL(file);
-          msgEl.textContent = '';
-        }
-
-        // File input change (click handled by <label>)
-        heroInput.addEventListener('change', function(){ if(this.files&&this.files[0]) handleHeroFile(this.files[0]); });
-        // Drag and drop
-        heroArea.addEventListener('dragover', function(e){ e.preventDefault(); heroArea.classList.add('drag-over'); });
-        heroArea.addEventListener('dragleave', function(){ heroArea.classList.remove('drag-over'); });
-        heroArea.addEventListener('drop', function(e){ e.preventDefault(); heroArea.classList.remove('drag-over'); if(e.dataTransfer.files&&e.dataTransfer.files[0]) handleHeroFile(e.dataTransfer.files[0]); });
-
-        saveBtn.addEventListener('click', async function() {
-          if (!heroFile) { msgEl.textContent = '请先选择图片'; msgEl.style.color = '#DC2626'; return; }
-          saveBtn.disabled = true;
-          saveBtn.textContent = '上传中...';
-          msgEl.textContent = '';
-          msgEl.style.color = '';
-
-          try {
-            // 1. Upload to Storage
-            var ext = heroFile.name.split('.').pop();
-            var fname = 'hero/hero-' + Date.now() + '.' + ext;
-            msgEl.textContent = '正在上传图片...';
-            msgEl.style.color = '#666';
-
-            var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/site-assets/' + fname, {
-              method: 'POST',
-              headers: { 'Authorization': 'Bearer ' + token, 'apikey': ANON_KEY },
-              body: heroFile
-            });
-
-            if (!upRes.ok) {
-              var errText = await upRes.text();
-              var errData = {};
-              try { if (errText) errData = JSON.parse(errText); } catch(e) {}
-              console.error('Storage upload error:', upRes.status, errData);
-              throw new Error((errData.message || errData.error) || ('图片上传失败 (HTTP ' + upRes.status + ')'));
-            }
-
-            var publicUrl = SUPABASE_URL + '/storage/v1/object/public/site-assets/' + fname;
-
-            // 2. Save to site_settings - try upsert via POST then PATCH if duplicate
-            msgEl.textContent = '正在保存设置...';
-
-            // First try POST (insert)
-            var saveRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings', {
-              method: 'POST', headers: headers(),
-              body: JSON.stringify({ key: 'hero_image_url', value: publicUrl })
-            });
-
-            // If duplicate key, try PATCH (update)
-            if (!saveRes.ok && saveRes.status === 409) {
-              saveRes = await fetch(SUPABASE_URL + '/rest/v1/site_settings?key=eq.hero_image_url', {
-                method: 'PATCH', headers: headers(),
-                body: JSON.stringify({ value: publicUrl })
-              });
-            }
-
-            if (!saveRes.ok) {
-              var seText = await saveRes.text();
-              var seErr = {};
-              try { if (seText) seErr = JSON.parse(seText); } catch(e) {}
-              console.error('site_settings save error:', saveRes.status, seErr);
-              throw new Error((seErr.message || seErr.error) || ('设置保存失败 (HTTP ' + saveRes.status + ')'));
-            }
-
-            msgEl.textContent = '首页 Banner 已更新！刷新前台首页即可看到新图片。';
-            msgEl.style.color = '#16A34A';
-            heroFile = null;
-            saveBtn.disabled = true;
-            saveBtn.textContent = '已保存';
-          } catch(e) {
-            console.error('Hero upload failed:', e);
-            msgEl.textContent = e.message || '上传失败';
-            msgEl.style.color = '#DC2626';
-            saveBtn.disabled = false;
-            saveBtn.textContent = '保存为首页 Banner';
-          }
-        });
-
-        document.getElementById('resetHeroBtn').addEventListener('click', async function() {
-          if (!confirm('确定恢复默认 Banner 吗？')) return;
-          await fetch(SUPABASE_URL + '/rest/v1/site_settings?key=eq.hero_image_url', {
-            method: 'PATCH', headers: headers(), body: JSON.stringify({ value: '' })
-          });
-          heroPlaceholder.style.display = 'block';
-          heroPreviewBox.style.display = 'none';
-          heroFile = null;
-          saveBtn.disabled = true;
-          msgEl.textContent = '已恢复默认 Banner';
-          msgEl.style.color = '#16A34A';
-        });
+        var currentUrl = data && data[0] && data[0].value;
+        if (currentUrl) showHeroPreview(currentUrl, true);
+      })
+      .catch(function(err) {
+        console.warn('读取当前 Banner 失败:', err);
       });
   }
 

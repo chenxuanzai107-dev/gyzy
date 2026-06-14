@@ -1,19 +1,74 @@
 /**
- * 建工青协 官方网站 — 前台交互逻辑
- * 功能: 导航、滚动动画、统计数字、活动加载、表单提交
+ * 建工青协官网前台脚本
+ * Handles navigation, Supabase-backed content, activity cards, and forms.
  */
-
 (function () {
   'use strict';
 
-  /* ====== 移动端汉堡菜单 ====== */
-  const navBtn = document.getElementById('navToggle');
-  const navLinks = document.getElementById('navList');
+  var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
+  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
 
-  if (navBtn && navLinks) {
+  function apiHeaders(extra) {
+    return Object.assign({
+      apikey: ANON_KEY,
+      Authorization: 'Bearer ' + ANON_KEY
+    }, extra || {});
+  }
+
+  async function safeJson(response) {
+    var text = await response.text();
+    if (!response.ok) {
+      throw new Error(text || ('HTTP ' + response.status));
+    }
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      console.error('响应不是合法 JSON:', text);
+      return null;
+    }
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatDate(value) {
+    if (!value) return '时间待定';
+    var d = new Date(value);
+    if (Number.isNaN(d.getTime())) return esc(value);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function checkCooldown(key, seconds) {
+    var last = Number(localStorage.getItem(key) || 0);
+    var diff = Math.floor((Date.now() - last) / 1000);
+    return last && diff < seconds ? seconds - diff : 0;
+  }
+
+  function setCooldown(key) {
+    localStorage.setItem(key, String(Date.now()));
+  }
+
+  function showFormMessage(el, message, type) {
+    if (!el) return;
+    el.textContent = message || '';
+    el.className = 'form-msg ' + (type || '');
+  }
+
+  function initNav() {
+    var navBtn = document.getElementById('navToggle');
+    var navLinks = document.getElementById('navList');
+    if (!navBtn || !navLinks) return;
+
     navBtn.addEventListener('click', function () {
-      const isOpen = navLinks.classList.toggle('open');
-      navBtn.setAttribute('aria-expanded', isOpen);
+      var isOpen = navLinks.classList.toggle('open');
+      navBtn.setAttribute('aria-expanded', String(isOpen));
       navBtn.setAttribute('aria-label', isOpen ? '关闭菜单' : '打开菜单');
     });
 
@@ -26,15 +81,9 @@
     });
   }
 
-  /* ====== 导航栏滚动阴影 ====== */
-  const navbar = document.getElementById('navbar');
-  window.addEventListener('scroll', function () {
-    if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 10);
-  }, { passive: true });
-
-  /* ====== 返回顶部按钮 ====== */
-  const backBtn = document.getElementById('backToTop');
-  if (backBtn) {
+  function initBackToTop() {
+    var backBtn = document.getElementById('backToTop');
+    if (!backBtn) return;
     window.addEventListener('scroll', function () {
       backBtn.classList.toggle('show', window.scrollY > 500);
     }, { passive: true });
@@ -43,358 +92,330 @@
     });
   }
 
-  /* ====== 滚动渐入动画 ====== */
-  const revealObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) entry.target.classList.add('in');
-    });
-  }, { threshold: 0.12 });
+  function initReveal() {
+    var items = document.querySelectorAll('.reveal, .reveal-stagger');
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(function (el) { el.classList.add('in'); });
+      return null;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    items.forEach(function (el) { observer.observe(el); });
+    return observer;
+  }
 
-  document.querySelectorAll('.reveal, .reveal-stagger').forEach(function (el) {
-    revealObserver.observe(el);
-  });
-
-  /* ====== 统计数字动画 ====== */
-  const statsObserver = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (!entry.isIntersecting) return;
-      const el = entry.target;
-      const target = parseInt(el.getAttribute('data-count'), 10) || 0;
-      const suffix = el.getAttribute('data-suffix') || '';
-      const duration = 1500;
-      const startTime = performance.now();
-
-      // 保持当前显示值，不清零
-
-      function animate(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-        const current = Math.floor(eased * target);
-        el.textContent = current + (progress >= 1 ? suffix : '');
-        if (progress < 1) requestAnimationFrame(animate);
-      }
-
-      requestAnimationFrame(animate);
-      statsObserver.unobserve(el);
-    });
-  }, { threshold: 0.4 });
-
-  document.querySelectorAll('.stat-number[data-count]').forEach(function (el) {
-    statsObserver.observe(el);
-  });
-
-  /* ====== 从 Supabase 加载统计数据 ====== */
-  var SUPABASE_URL = 'https://pzyijmgcksmyagdvdgoq.supabase.co';
-  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI';
-
-  // 加载首页 Hero Banner 图片
-  (function loadHeroImage() {
+  async function loadHeroImage() {
     var hero = document.querySelector('.hero');
     if (!hero) return;
-    fetch(SUPABASE_URL + '/rest/v1/site_settings?select=value&key=eq.hero_image_url', {
-      headers: { 'apikey': ANON_KEY }
-    }).then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data && data[0] && data[0].value) {
-          hero.style.backgroundImage = 'url(' + data[0].value + ')';
-          // 把遮罩层放在图片上面
-          hero.style.position = 'relative';
-        }
-      })
-      .catch(function() { /* 使用默认渐变背景 */ });
-  })();
+    var fallback = 'assets/images/hero-building.png';
+
+    function setHero(url) {
+      hero.style.backgroundImage =
+        'linear-gradient(90deg, rgba(0,0,0,.62), rgba(0,0,0,.28)), url("' + url + '")';
+    }
+
+    try {
+      var res = await fetch(SUPABASE_URL + '/rest/v1/site_settings?select=value&key=eq.hero_image_url', {
+        headers: apiHeaders()
+      });
+      var data = await safeJson(res);
+      setHero(data && data[0] && data[0].value ? data[0].value : fallback);
+    } catch (err) {
+      console.warn('首页 Banner 加载失败，使用默认背景:', err.message);
+      setHero(fallback);
+    }
+  }
 
   async function loadStats() {
     try {
-      var res = await fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', {
-        headers: { 'apikey': ANON_KEY }
-      });
-      if (res.ok) {
-        var data = await res.json();
-        if (data && data.length > 0) {
-          var map = {};
-          data.forEach(function(s) { map[s.key] = s.value; });
-          setStat('service_hours', map.service_hours);
-          setStat('volunteers_count', map.volunteers);
-          setStat('activities_count', map.yearly_activities);
-          setStat('covered_people', map.people_served);
-          return;
-        }
-      }
-    } catch (e) { /* 使用 HTML 默认值 */ }
+      var res = await fetch(SUPABASE_URL + '/rest/v1/site_stats?select=*', { headers: apiHeaders() });
+      var data = await safeJson(res);
+      if (!Array.isArray(data) || data.length === 0) return;
+
+      var map = {};
+      data.forEach(function (s) { map[s.key] = Number(s.value); });
+      setStat('service_hours', map.service_hours);
+      setStat('volunteers_count', map.volunteers_count || map.volunteers || map.registered_volunteers);
+      setStat('activities_count', map.activities_count || map.yearly_activities);
+      setStat('covered_people', map.covered_people || map.people_served);
+    } catch (err) {
+      console.warn('统计数据加载失败，保留 HTML 默认值:', err.message);
+    }
   }
 
   function setStat(key, value) {
     var el = document.querySelector('[data-stat="' + key + '"]');
-    if (!el || !value) return;
-    var suffix = value >= 1000 ? '+' : '';
-    el.textContent = value + suffix;
+    var num = Number(value);
+    if (!el || !num || num <= 0) return;
+    el.textContent = num + '+';
   }
-  loadStats();
 
-  /* ====== 从 Supabase 加载活动数据 ====== */
-  async function loadActivities() {
+  async function loadActivities(revealObserver) {
     var container = document.getElementById('activitiesGrid');
     if (!container) return;
-
-    // 5秒超时回退
-    var loaded = false;
-    setTimeout(function() {
-      if (!loaded) {
-        container.innerHTML = '<div class="activities-empty">暂无活动内容</div>';
-      }
-    }, 5000);
+    container.innerHTML = '<div class="activities-loading">活动加载中...</div>';
 
     try {
-      var res = await fetch(SUPABASE_URL + '/rest/v1/activities?is_published=eq.true&order=is_featured.desc,event_date.desc&limit=6', {
-        headers: { 'apikey': ANON_KEY }
-      });
-      if (res.ok) {
-        var data = await res.json();
-        if (data && data.length > 0) { loaded = true; renderActivities(container, data); return; }
-      }
-    } catch (e) { console.error('Activities fetch error:', e); }
+      var url = SUPABASE_URL + '/rest/v1/activities?select=*&is_published=eq.true&order=is_featured.desc,event_date.desc&limit=6';
+      var res = await fetch(url, { headers: apiHeaders() });
+      var data = await safeJson(res);
 
-    // 离线: JSON
-    try {
-      var r2 = await fetch('data/activities.json');
-      var jd = await r2.json();
-      loaded = true;
-      renderActivities(container, jd);
-    } catch (e) {
-      if (!loaded) {
-        container.innerHTML = '<p style="text-align:center;color:var(--text-2);padding:24px;">暂无活动内容</p>';
+      if (!Array.isArray(data) || data.length === 0) {
+        var fallbackRes = await fetch(SUPABASE_URL + '/rest/v1/activities?select=*&is_published=eq.true&order=event_date.desc&limit=6', {
+          headers: apiHeaders()
+        });
+        data = await safeJson(fallbackRes);
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        renderActivities(container, [], revealObserver);
+        return;
+      }
+      renderActivities(container, data, revealObserver);
+    } catch (err) {
+      console.error('活动加载失败:', err);
+      try {
+        var localRes = await fetch('data/activities.json');
+        var localData = await safeJson(localRes);
+        renderActivities(container, Array.isArray(localData) ? localData : [], revealObserver);
+      } catch (localErr) {
+        container.innerHTML = '<div class="activities-error">活动加载失败，请稍后重试</div>';
       }
     }
   }
 
-  function formatDate(value) {
-    if (!value) return '时间待定';
-    var d = new Date(value);
-    if (isNaN(d.getTime())) return esc(String(value));
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
-
-  function renderActivities(container, activities) {
-    if (!activities || !activities.length) {
+  function renderActivities(container, activities, revealObserver) {
+    if (!Array.isArray(activities) || activities.length === 0) {
       container.innerHTML = '<div class="activities-empty">暂无活动内容</div>';
       return;
     }
 
-    container.innerHTML = activities.map(function(a) {
-      var id = a.id || '';
-      var title = esc(a.title || '未命名活动');
-      var category = esc(a.category || '活动');
-      var date = formatDate(a.date || a.event_date);
-      var location = esc(a.location || '地点待定');
-      var vc = Number(a.volunteers_count ?? a.participants ?? 0);
-      var sh = Number(a.service_hours ?? 0);
-      var desc = esc(a.description || '暂无活动简介');
-      var cover = a.cover_image ? esc(a.cover_image) : '';
-
+    container.innerHTML = activities.map(function (activity) {
+      var id = encodeURIComponent(activity.id || '');
+      var title = esc(activity.title || '未命名活动');
+      var category = esc(activity.category || '活动');
+      var date = formatDate(activity.date || activity.event_date);
+      var location = esc(activity.location || '地点待定');
+      var volunteers = Number(activity.volunteers_count != null ? activity.volunteers_count : activity.participants) || 0;
+      var hours = Number(activity.service_hours != null ? activity.service_hours : activity.serviceHours) || 0;
+      var desc = esc(activity.description || '暂无活动简介');
+      var cover = activity.cover_image || activity.image ? esc(activity.cover_image || activity.image) : '';
+      var detailUrl = 'activity-detail.html?id=' + id;
       var coverHtml = cover
         ? '<img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><div class="activity-cover-placeholder" style="display:none;">建工青协</div>'
         : '<div class="activity-cover-placeholder">建工青协</div>';
 
-      return '<article class="activity-card reveal">'
-        + '<a class="activity-cover" href="activity-detail.html?id=' + encodeURIComponent(id) + '" aria-label="' + title + '">' + coverHtml + '</a>'
+      return ''
+        + '<article class="activity-card reveal">'
+        + '<a class="activity-cover" href="' + detailUrl + '" aria-label="查看' + title + '详情">' + coverHtml + '</a>'
         + '<div class="activity-body">'
         + '<div class="activity-topline"><span class="activity-category">' + category + '</span><span class="activity-date">' + date + '</span></div>'
-        + '<h3 class="activity-title"><a href="activity-detail.html?id=' + encodeURIComponent(id) + '">' + title + '</a></h3>'
-        + '<div class="activity-meta"><span class="activity-meta-item">📍 ' + location + '</span><span class="activity-meta-item">👥 ' + vc + '人</span><span class="activity-meta-item">⏱ ' + sh + 'h</span></div>'
+        + '<h3 class="activity-title"><a href="' + detailUrl + '">' + title + '</a></h3>'
+        + '<div class="activity-meta">'
+        + '<span class="activity-meta-item">地点：' + location + '</span>'
+        + '<span class="activity-meta-item">人数：' + volunteers + '人</span>'
+        + '<span class="activity-meta-item">时长：' + hours + 'h</span>'
+        + '</div>'
         + '<p class="activity-desc">' + desc + '</p>'
-        + '<a class="activity-more" href="activity-detail.html?id=' + encodeURIComponent(id) + '">查看详情 &rarr;</a>'
+        + '<a class="activity-more" href="' + detailUrl + '">查看详情 &rarr;</a>'
         + '</div></article>';
     }).join('');
 
-    container.querySelectorAll('.reveal').forEach(function(el) { revealObserver.observe(el); });
+    if (revealObserver) {
+      container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+    } else {
+      container.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
   }
 
-  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  loadActivities();
+  function initRegistrationForm() {
+    var form = document.getElementById('registrationForm');
+    var msg = document.getElementById('regMessage');
+    if (!form) return;
 
-  /* ====== 报名表单提交 (含防刷) ====== */
-  const regForm = document.getElementById('registrationForm');
-  const regMsg = document.getElementById('regMessage');
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      var originalText = btn.textContent;
 
-  if (regForm) {
-    regForm.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const btn = regForm.querySelector('button[type="submit"]');
-      const originalText = btn.innerHTML;
-
-      // Honeypot 检查
-      const honeypot = document.getElementById('regHoneypot');
+      var honeypot = document.getElementById('regHoneypot');
       if (honeypot && honeypot.value) {
-        regMsg.textContent = '报名提交成功！我们会尽快与你联系。';
-        regMsg.className = 'form-message success';
-        regForm.reset();
-        return; // 静默拒绝机器人
+        showFormMessage(msg, '报名提交成功！我们会尽快与你联系。', 'success');
+        form.reset();
+        return;
       }
 
-      // 频率限制: 60秒内不能重复提交
-      var lastReg = localStorage.getItem('gyzy_reg_last');
-      if (lastReg) {
-        var remain = 60 - Math.floor((Date.now() - parseInt(lastReg)) / 1000);
-        if (remain > 0) {
-          regMsg.textContent = '提交太频繁，请 ' + remain + ' 秒后再试。';
-          regMsg.className = 'form-message error';
-          return;
-        }
+      var remain = checkCooldown('lastApplySubmitTime', 60);
+      if (remain > 0) {
+        showFormMessage(msg, '提交太频繁，请 ' + remain + ' 秒后再试。', 'error');
+        return;
+      }
+
+      var data = {
+        name: document.getElementById('regName').value.trim().slice(0, 20),
+        department: document.getElementById('regDept').value.trim().slice(0, 80),
+        contact: document.getElementById('regContact').value.trim().slice(0, 50),
+        direction: document.getElementById('regDirection').value,
+        intro: document.getElementById('regIntro').value.trim().slice(0, 300)
+      };
+
+      if (!data.name || !data.department || !data.contact) {
+        showFormMessage(msg, '请填写姓名、专业 / 班级和联系方式。', 'error');
+        return;
       }
 
       btn.disabled = true;
-      btn.innerHTML = '提交中...';
-      regMsg.textContent = '';
-      regMsg.className = 'form-message';
+      btn.textContent = '提交中...';
+      showFormMessage(msg, '', '');
 
-      // 字段长度限制
-      const name = document.getElementById('regName').value.trim().substring(0, 20);
-      const department = document.getElementById('regDept').value.trim().substring(0, 80);
-      const contact = document.getElementById('regContact').value.trim().substring(0, 50);
-      const direction = document.getElementById('regDirection').value;
-      const intro = document.getElementById('regIntro').value.trim().substring(0, 300);
-
-      if (!name || !department || !contact) {
-        regMsg.textContent = '请填写姓名、专业班级和联系方式';
-        regMsg.className = 'form-message error';
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        return;
-      }
-
-      const data = { name, department, contact, direction, intro };
-      let success = false;
-
-      // Supabase 直连
+      var supabaseOk = false;
+      var mailOk = false;
       try {
-        const res = await fetch('https://pzyijmgcksmyagdvdgoq.supabase.co/rest/v1/applications', {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/applications', {
           method: 'POST',
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI',
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
+          headers: apiHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
           body: JSON.stringify(data)
         });
-        if (res.ok) success = true;
-      } catch (err) { /* 网络错误 */ }
-
-      // 邮箱备份
-      try {
-        const fd = new FormData();
-        Object.keys(data).forEach(function(k) { fd.append(k, data[k]); });
-        await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
-          method: 'POST', headers: { 'Accept': 'application/json' }, body: fd,
-        });
-        success = true;
-      } catch (err) { /* formsubmit 失败不影响 */ }
-
-      if (success) {
-        localStorage.setItem('gyzy_reg_last', Date.now());
-        regMsg.textContent = '报名提交成功！我们会尽快与你联系。';
-        regMsg.className = 'form-message success';
-        regForm.reset();
-      } else {
-        regMsg.textContent = '网络异常，请稍后重试或直接发送邮件至 chenxuanzai107@gmail.com';
-        regMsg.className = 'form-message error';
+        if (!res.ok) throw new Error(await res.text());
+        supabaseOk = true;
+      } catch (err) {
+        console.error('Supabase applications insert failed:', err.message);
       }
+
+      try {
+        var fd = new FormData();
+        Object.keys(data).forEach(function (key) { fd.append(key, data[key]); });
+        var mailRes = await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: fd
+        });
+        mailOk = mailRes.ok;
+      } catch (err) {
+        mailOk = false;
+      }
+
+      if (supabaseOk) {
+        setCooldown('lastApplySubmitTime');
+        showFormMessage(msg, '报名提交成功！后台已收到，我们会尽快与你联系。', 'success');
+        form.reset();
+      } else if (mailOk) {
+        setCooldown('lastApplySubmitTime');
+        showFormMessage(msg, '报名已通过邮件发送，但后台未同步，请管理员检查数据库配置。', 'error');
+      } else {
+        showFormMessage(msg, '报名提交失败，请稍后重试。', 'error');
+      }
+
       btn.disabled = false;
-      btn.innerHTML = originalText;
+      btn.textContent = originalText;
     });
   }
 
-  /* ====== 留言表单提交 (含防刷) ====== */
-  const fbForm = document.getElementById('feedbackForm');
-  const fbMsg = document.getElementById('fbMessage');
+  function initFeedbackForm() {
+    var form = document.getElementById('feedbackForm');
+    var msg = document.getElementById('fbMessage');
+    if (!form) return;
 
-  if (fbForm) {
-    fbForm.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const btn = fbForm.querySelector('button[type="submit"]');
-      const originalText = btn.innerHTML;
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      var originalText = btn.textContent;
 
-      // Honeypot
-      const honeypot = document.getElementById('fbHoneypot');
+      var honeypot = document.getElementById('fbHoneypot');
       if (honeypot && honeypot.value) {
-        fbMsg.textContent = '留言提交成功！感谢你的反馈。';
-        fbMsg.className = 'form-message success';
-        fbForm.reset();
+        showFormMessage(msg, '留言提交成功！感谢你的反馈。', 'success');
+        form.reset();
         return;
       }
 
-      // 频率限制
-      var lastFb = localStorage.getItem('gyzy_fb_last');
-      if (lastFb) {
-        var remainFb = 60 - Math.floor((Date.now() - parseInt(lastFb)) / 1000);
-        if (remainFb > 0) {
-          fbMsg.textContent = '提交太频繁，请 ' + remainFb + ' 秒后再试。';
-          fbMsg.className = 'form-message error';
-          return;
-        }
+      var remain = checkCooldown('lastMessageSubmitTime', 60);
+      if (remain > 0) {
+        showFormMessage(msg, '提交太频繁，请 ' + remain + ' 秒后再试。', 'error');
+        return;
+      }
+
+      var data = {
+        name: document.getElementById('fbName').value.trim().slice(0, 20),
+        contact: document.getElementById('fbContact').value.trim().slice(0, 50),
+        content: document.getElementById('fbContent').value.trim().slice(0, 500)
+      };
+
+      if (!data.name || !data.content) {
+        showFormMessage(msg, '请填写姓名和留言内容。', 'error');
+        return;
       }
 
       btn.disabled = true;
-      btn.innerHTML = '提交中...';
-      fbMsg.textContent = '';
-      fbMsg.className = 'form-message';
+      btn.textContent = '提交中...';
+      showFormMessage(msg, '', '');
 
-      const name = document.getElementById('fbName').value.trim().substring(0, 20);
-      const contact = document.getElementById('fbContact').value.trim().substring(0, 50);
-      const content = document.getElementById('fbContent').value.trim().substring(0, 500);
-
-      if (!name || !content) {
-        fbMsg.textContent = '请填写姓名和留言内容';
-        fbMsg.className = 'form-message error';
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        return;
-      }
-
-      const data = { name, contact, content };
-      let success = false;
-
+      var supabaseOk = false;
+      var mailOk = false;
       try {
-        const res = await fetch('https://pzyijmgcksmyagdvdgoq.supabase.co/rest/v1/messages', {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/messages', {
           method: 'POST',
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6eWlqbWdja3NteWFnZHZkZ29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDEzMTIsImV4cCI6MjA5NTMxNzMxMn0._sohNeH4Zh7qTaqLd0b8gY3GKg3t4ShJTSCkNEQfAyI',
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
+          headers: apiHeaders({ 'Content-Type': 'application/json', Prefer: 'return=representation' }),
           body: JSON.stringify(data)
         });
-        if (res.ok) success = true;
-      } catch (err) { /* 网络错误 */ }
+        if (!res.ok) throw new Error(await res.text());
+        console.log('Supabase 留言写入成功:', await res.text().catch(function () { return ''; }));
+        supabaseOk = true;
+      } catch (err) {
+        console.error('Supabase messages insert failed:', err.message);
+      }
 
       try {
-        const fd = new FormData();
-        fd.append('name', name); fd.append('contact', contact); fd.append('content', content);
-        await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
-          method: 'POST', headers: { 'Accept': 'application/json' }, body: fd,
+        var fd = new FormData();
+        fd.append('name', data.name);
+        fd.append('contact', data.contact);
+        fd.append('content', data.content);
+        var mailRes = await fetch('https://formsubmit.co/ajax/chenxuanzai107@gmail.com', {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: fd
         });
-        success = true;
-      } catch (err) { /* 静默失败 */ }
-
-      if (success) {
-        localStorage.setItem('gyzy_fb_last', Date.now());
-        fbMsg.textContent = '留言提交成功！感谢你的反馈。';
-        fbMsg.className = 'form-message success';
-        fbForm.reset();
-      } else {
-        fbMsg.textContent = '网络异常，请稍后重试或直接发送邮件至 chenxuanzai107@gmail.com';
-        fbMsg.className = 'form-message error';
+        mailOk = mailRes.ok;
+      } catch (err) {
+        mailOk = false;
       }
+
+      if (supabaseOk) {
+        setCooldown('lastMessageSubmitTime');
+        showFormMessage(msg, '留言提交成功，后台已收到。', 'success');
+        form.reset();
+      } else if (mailOk) {
+        setCooldown('lastMessageSubmitTime');
+        showFormMessage(msg, '留言已通过邮件发送，但后台未同步，请管理员检查数据库配置。', 'error');
+      } else {
+        showFormMessage(msg, '留言提交失败，请稍后重试。', 'error');
+      }
+
       btn.disabled = false;
-      btn.innerHTML = originalText;
+      btn.textContent = originalText;
     });
   }
 
-  // 调试: 清除提交冷却
-  window.clearSubmitCooldown = function() {
+  window.clearSubmitCooldown = function () {
+    localStorage.removeItem('lastApplySubmitTime');
+    localStorage.removeItem('lastMessageSubmitTime');
+    localStorage.removeItem('lastSubmitTime');
     localStorage.removeItem('gyzy_reg_last');
     localStorage.removeItem('gyzy_fb_last');
     console.log('提交冷却已清除');
   };
+
+  var revealObserver = initReveal();
+  initNav();
+  initBackToTop();
+  loadHeroImage();
+  loadStats();
+  loadActivities(revealObserver);
+  initRegistrationForm();
+  initFeedbackForm();
 })();
