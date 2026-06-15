@@ -1,0 +1,7 @@
+{
+  "name": "gyzy-api",
+  "version": "1.0.0",
+  "description": "Free-first uniCloud API for gyzy static site",
+  "main": "index.js",
+  "dependencies": {}
+}
