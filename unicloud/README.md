@@ -1,6 +1,8 @@
-# uniCloud Deployment Guide
+# uniCloud Deployment Guide / 部署说明
 
 This folder contains the free-first uniCloud backend for the gyzy static site.
+
+本目录是建工青协官网的 uniCloud 免费后端。网页仍然部署在 GitHub Pages，后端只使用一个 URL 化云函数。
 
 ## Service Space
 
@@ -11,6 +13,8 @@ mp-53d28a73-8fcd-4a91-a0c1-16249a142f32
 ```
 
 Prefer the free Alibaba Cloud service space. Free spaces must be renewed manually before expiry in the uniCloud console.
+
+建议使用阿里云免费服务空间。免费空间到期前需要在 uniCloud 控制台手动续期。
 
 ## Collections
 
@@ -45,6 +49,8 @@ password: ChangeMe123!
 
 Change this email and password after import. The first migration uses a simple free admin token instead of uni-id.
 
+导入后请尽快修改管理员邮箱和密码。第一版迁移为了免费和简单，暂时不用 uni-id。
+
 ## Cloud Function
 
 Upload this folder as one cloud function:
@@ -65,6 +71,50 @@ In the uniCloud console or HBuilderX:
 ```
 
 5. Copy the complete generated HTTP URL.
+
+中文步骤：
+
+1. 用 HBuilderX 打开 `C:\Users\ccc\gyzy-pages`。
+2. 绑定服务空间 `mp-53d28a73-8fcd-4a91-a0c1-16249a142f32`。
+3. 右键 `unicloud/cloudfunctions/gyzy-api`，选择上传部署。
+4. 在 uniCloud 控制台为 `gyzy-api` 开启 URL 化。
+5. URL 路径填：
+
+```text
+/gyzy-api
+```
+
+6. 复制生成的完整 HTTP 地址。
+
+## Web Safe Domain / 跨域安全域名
+
+For a GitHub Pages frontend, configure the uniCloud web safe domain:
+
+```text
+chenxuanzai107-dev.github.io
+```
+
+For local testing, optionally add:
+
+```text
+127.0.0.1:*
+localhost:*
+```
+
+中文：因为前端网页部署在 GitHub Pages，必须在 uniCloud 后台给云函数绑定安全域名：
+
+```text
+chenxuanzai107-dev.github.io
+```
+
+本地测试时再加：
+
+```text
+127.0.0.1:*
+localhost:*
+```
+
+注意端口也算跨域配置的一部分，本地端口不固定时使用 `:*`。
 
 ## Static Site Config
 
