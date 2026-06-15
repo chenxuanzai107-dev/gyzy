@@ -2,6 +2,13 @@
 
 当前网站代码已经切换为 CloudBase 优先。要让后台、报名、留言、活动、统计、首页 Banner 真正可用，需要完成以下配置。
 
+官方文档参考：
+
+- Web SDK CDN 与初始化：https://cloud.tencent.com/document/product/876/46332
+- Web SDK 数据库增删改查：https://docs.cloudbase.net/api-reference/webv2/database
+- Web SDK 邮箱 / 密码登录：https://docs.cloudbase.net/api-reference/webv2/authentication
+- Web SDK 云存储上传：https://docs.cloudbase.net/en/api-reference/webv2/storage
+
 ## 1. 创建 CloudBase 环境
 
 1. 打开腾讯云 CloudBase 控制台。
@@ -55,6 +62,8 @@ site_stats
 site_settings
 admin_users
 ```
+
+可以使用 `cloudbase/seed-data.json` 作为初始化数据来源。这个文件里已经按集合名整理好了初始活动、统计、首页配置和管理员记录。
 
 推荐字段：
 
@@ -137,6 +146,8 @@ admin_users
 }
 ```
 
+> 说明：后台管理员校验会优先按 `uid` 匹配，其次按 `email` 匹配。刚开始不知道 UID 时，可以先写邮箱；登录成功后如果后台能进入，再补 UID 更稳。
+
 如果 CloudBase 登录用户能看到 uid，也建议加：
 
 ```json
@@ -160,9 +171,17 @@ admin_users
 
 CloudBase 安全规则语法与环境版本有关，若规则配置不熟悉，建议先用临时宽松规则完成数据迁移和验收，再收紧到管理员云函数方案。
 
+临时验收期可以先确认三条链路：
+
+1. 匿名用户能新增 `applications` 和 `messages`。
+2. 匿名用户能读取 `activities`、`site_stats`、`site_settings`。
+3. 登录管理员能读写 `applications`、`messages`、`activities`、`site_stats`、`site_settings`。
+
+验收完成后再收紧规则，避免一开始就被规则挡住导致难以判断是代码问题还是权限问题。
+
 ## 6. 云存储
 
-CloudBase 不需要像 Supabase 那样创建 `site-assets` bucket。代码会把文件上传到云存储路径：
+CloudBase 不需要像旧后端那样创建 bucket。代码会把文件上传到云存储路径：
 
 ```text
 site-assets/hero/...
@@ -170,6 +189,11 @@ site-assets/activity-covers/...
 ```
 
 前台读取时会把 CloudBase 文件 ID 解析为可访问 URL。
+
+代码同时兼容两种官方上传方式：
+
+1. 传统方式：`app.uploadFile({ cloudPath, filePath })`
+2. 新版方式：`app.storage.from().upload(path, file)`
 
 ## 7. 验收顺序
 

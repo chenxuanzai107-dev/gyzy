@@ -31,6 +31,14 @@
     return new Date().toISOString();
   }
 
+  function throwIfCloudbaseError(result, fallbackMessage) {
+    if (result && result.error) {
+      var error = result.error;
+      throw backendError(error.message || fallbackMessage || 'CloudBase 请求失败', error.code || 'CLOUDBASE_ERROR');
+    }
+    return result;
+  }
+
   function getApp() {
     if (!isConfigured()) {
       throw backendError('CloudBase 环境未配置，请先在 js/backend-config.js 填写 envId。', 'NOT_CONFIGURED');
@@ -60,7 +68,7 @@
           if (state) return state;
         }
         if (typeof auth.signInAnonymously === 'function') {
-          return await auth.signInAnonymously();
+          return throwIfCloudbaseError(await auth.signInAnonymously(), '匿名登录失败');
         }
         if (typeof auth.anonymousAuthProvider === 'function') {
           var provider = auth.anonymousAuthProvider();
@@ -80,9 +88,16 @@
     getApp();
     if (!auth) return null;
     try {
+      if (typeof auth.getUser === 'function') {
+        var userRes = throwIfCloudbaseError(await auth.getUser(), '获取用户信息失败');
+        if (userRes && userRes.data) return userRes.data.user || userRes.data;
+      }
       if (typeof auth.getLoginState === 'function') {
         var state = await auth.getLoginState();
         return state && (state.user || state.userInfo || state);
+      }
+      if (auth.currentUser && typeof auth.currentUser === 'function') {
+        return await auth.currentUser();
       }
       return auth.currentUser || null;
     } catch (err) {
@@ -104,7 +119,7 @@
   async function listDocuments(collectionKey, options) {
     await ensurePublicSession();
     var col = db.collection(getCollectionName(collectionKey));
-    var res = await applyQuery(col, options).get();
+    var res = throwIfCloudbaseError(await applyQuery(col, options).get(), '数据读取失败');
     return Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
   }
 
@@ -113,7 +128,7 @@
     var col = db.collection(getCollectionName(collectionKey));
     if (id && typeof col.doc === 'function') {
       try {
-        var docRes = await col.doc(id).get();
+        var docRes = throwIfCloudbaseError(await col.doc(id).get(), '数据读取失败');
         if (docRes && docRes.data) {
           return Array.isArray(docRes.data) ? docRes.data[0] : docRes.data;
         }
@@ -131,7 +146,7 @@
       created_at: data.created_at || nowIso(),
       updated_at: nowIso()
     });
-    var res = await db.collection(getCollectionName(collectionKey)).add(payload);
+    var res = throwIfCloudbaseError(await db.collection(getCollectionName(collectionKey)).add(payload), '数据新增失败');
     return res;
   }
 
@@ -142,13 +157,13 @@
     delete payload.id;
     var col = db.collection(getCollectionName(collectionKey));
     if (!id) throw backendError('缺少记录 ID。', 'MISSING_ID');
-    return await col.doc(id).update(payload);
+    return throwIfCloudbaseError(await col.doc(id).update(payload), '数据更新失败');
   }
 
   async function deleteDocument(collectionKey, id) {
     await ensurePublicSession();
     if (!id) throw backendError('缺少记录 ID。', 'MISSING_ID');
-    return await db.collection(getCollectionName(collectionKey)).doc(id).remove();
+    return throwIfCloudbaseError(await db.collection(getCollectionName(collectionKey)).doc(id).remove(), '数据删除失败');
   }
 
   async function getSetting(key) {
@@ -220,7 +235,8 @@
     getApp();
     if (!auth) throw backendError('CloudBase 登录模块不可用。', 'AUTH_MISSING');
     if (typeof auth.signInWithPassword === 'function') {
-      return await auth.signInWithPassword({ email: email, password: password });
+      var res = throwIfCloudbaseError(await auth.signInWithPassword({ email: email, password: password }), '登录失败');
+      return res.data || res;
     }
     if (typeof auth.signInWithEmailAndPassword === 'function') {
       return await auth.signInWithEmailAndPassword(email, password);
@@ -254,6 +270,27 @@
     if (!value) return '';
     if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
     getApp();
+    var storage = typeof app.storage === 'function' ? app.storage() : app.storage;
+    if (storage && typeof storage.from === 'function') {
+      try {
+        var fromRef = null;
+        try {
+          fromRef = storage.from();
+        } catch (fromErr) {
+          fromRef = storage.from(cloudbaseConfig.storageRoot || 'site-assets');
+        }
+        if (fromRef && typeof fromRef.getPublicUrl === 'function') {
+          var publicData = fromRef.getPublicUrl(value);
+          if (publicData && publicData.data && publicData.data.publicUrl) return publicData.data.publicUrl;
+        }
+        if (fromRef && typeof fromRef.createSignedUrl === 'function') {
+          var signed = throwIfCloudbaseError(await fromRef.createSignedUrl(value, 3600), '获取图片访问地址失败');
+          if (signed && signed.data && signed.data.signedUrl) return signed.data.signedUrl;
+        }
+      } catch (err0) {
+        console.warn('[CloudBase] 新版文件地址解析失败：', err0.message || err0);
+      }
+    }
     if (typeof app.getTempFileURL === 'function') {
       try {
         var res = await app.getTempFileURL({ fileList: [value] });
@@ -278,20 +315,31 @@
     var cloudPath = root + '/' + (folder || 'uploads') + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
 
     if (typeof app.uploadFile === 'function') {
-      var up = await app.uploadFile({ cloudPath: cloudPath, filePath: file });
+      var up = throwIfCloudbaseError(await app.uploadFile({ cloudPath: cloudPath, filePath: file }), '图片上传失败');
       var fileID = up.fileID || up.fileId || up.fileid || cloudPath;
       return { value: fileID, url: await resolveFileUrl(fileID), path: cloudPath };
     }
 
     var storage = typeof app.storage === 'function' ? app.storage() : app.storage;
     if (storage && typeof storage.from === 'function') {
-      var bucket = cloudbaseConfig.storageBucket || root;
-      var upload = await storage.from(bucket).upload(cloudPath, file, { upsert: true, contentType: file.type });
-      if (upload && upload.error) throw upload.error;
-      if (storage.from(bucket).getPublicUrl) {
-        var publicData = storage.from(bucket).getPublicUrl(cloudPath);
-        return { value: publicData && publicData.data && publicData.data.publicUrl, url: publicData && publicData.data && publicData.data.publicUrl, path: cloudPath };
+      var fromRef = null;
+      try {
+        fromRef = storage.from();
+      } catch (err) {
+        fromRef = storage.from(root);
       }
+      var upload = throwIfCloudbaseError(await fromRef.upload(cloudPath, file, {
+        cacheControl: 'max-age=3600',
+        upsert: true,
+        contentType: file.type
+      }), '图片上传失败');
+      var fileId = upload && upload.data && (upload.data.id || upload.data.fullPath || upload.data.path);
+      if (fromRef.getPublicUrl && fileId) {
+        var publicData = fromRef.getPublicUrl(fileId);
+        var publicUrl = publicData && publicData.data && publicData.data.publicUrl;
+        return { value: fileId, url: publicUrl || fileId, path: cloudPath };
+      }
+      return { value: fileId || cloudPath, url: fileId || cloudPath, path: cloudPath };
     }
 
     throw backendError('当前 CloudBase SDK 不支持浏览器上传，请检查 SDK 版本。', 'UPLOAD_UNSUPPORTED');
