@@ -63,7 +63,18 @@ site_settings
 admin_users
 ```
 
-可以使用 `cloudbase/seed-data.json` 作为初始化数据来源。这个文件里已经按集合名整理好了初始活动、统计、首页配置和管理员记录。
+可以使用 `cloudbase/import/` 目录下的文件逐个导入：
+
+```text
+activities     -> cloudbase/import/activities.json
+site_stats     -> cloudbase/import/site_stats.json
+site_settings  -> cloudbase/import/site_settings.json
+admin_users    -> cloudbase/import/admin_users.json
+applications   -> 空集合即可
+messages       -> 空集合即可
+```
+
+也可以查看 `cloudbase/seed-data.json`，这个文件把所有集合的初始化数据汇总在一起。
 
 推荐字段：
 

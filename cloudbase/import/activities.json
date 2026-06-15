@@ -1,0 +1,50 @@
+[
+  {
+    "title": "社区敬老院慰问活动",
+    "category": "社区服务",
+    "date": "2026-03-15",
+    "time": "08:00-12:00",
+    "location": "茂名市养老服务中心",
+    "volunteers_count": 35,
+    "service_hours": 4,
+    "description": "组织志愿者前往茂名市养老服务中心，为老人们送去关爱与陪伴。活动包括陪老人聊天、打扫卫生、文艺表演、手工制作等。",
+    "detail_content": "组织志愿者前往茂名市养老服务中心，为老人们送去关爱与陪伴。\n活动包括陪老人聊天、打扫卫生、文艺表演、手工制作等，让老人们感受到来自青年志愿者的温暖。",
+    "cover_image": "",
+    "is_published": true,
+    "is_featured": true,
+    "created_at": "2026-06-15T00:00:00.000Z",
+    "updated_at": "2026-06-15T00:00:00.000Z"
+  },
+  {
+    "title": "小小建筑师科普课堂",
+    "category": "科普教育",
+    "date": "2026-03-22",
+    "time": "14:00-17:00",
+    "location": "茂名市茂南第一小学",
+    "volunteers_count": 20,
+    "service_hours": 3,
+    "description": "发挥建筑专业特长，为小学生开展建筑知识科普，通过模型展示、手工搭建和趣味问答激发孩子们对工程的兴趣。",
+    "detail_content": "发挥建筑专业特长，为小学生开展建筑知识科普。\n通过模型展示、手工搭建和趣味问答等形式，引导孩子们理解建筑结构与城市空间，感受工程学科的魅力。",
+    "cover_image": "",
+    "is_published": true,
+    "is_featured": true,
+    "created_at": "2026-06-15T00:00:00.000Z",
+    "updated_at": "2026-06-15T00:00:00.000Z"
+  },
+  {
+    "title": "校园环保清洁行动",
+    "category": "环保公益",
+    "date": "2026-04-05",
+    "time": "09:00-16:00",
+    "location": "广东石油化工学院校园",
+    "volunteers_count": 50,
+    "service_hours": 7,
+    "description": "组织志愿者开展校园环保清洁、垃圾分类宣传和公共区域维护，以实际行动建设美丽校园。",
+    "detail_content": "组织志愿者开展校园环保清洁、垃圾分类宣传和公共区域维护。\n活动覆盖教学楼、绿化带与公共活动区域，倡导同学们共同参与校园环境建设。",
+    "cover_image": "",
+    "is_published": true,
+    "is_featured": false,
+    "created_at": "2026-06-15T00:00:00.000Z",
+    "updated_at": "2026-06-15T00:00:00.000Z"
+  }
+]
