@@ -1,6 +1,6 @@
 /**
  * 建工青协官网前台脚本
- * 数据通过 window.gyzyBackend 访问 CloudBase；未配置时使用静态兜底。
+ * 数据通过 window.gyzyBackend 访问 uniCloud；未配置时使用静态兜底。
  */
 (function () {
   'use strict';
@@ -309,7 +309,7 @@
         await backend.submitApplication(data);
         cloudOk = true;
       } catch (err) {
-        console.error('CloudBase applications insert failed:', err.message || err);
+        console.error('uniCloud applications insert failed:', err.message || err);
       }
 
       var mailOk = cloudOk ? false : await sendMailFallback(data, '建工青协报名表');
@@ -372,7 +372,7 @@
         await backend.submitMessage(data);
         cloudOk = true;
       } catch (err) {
-        console.error('CloudBase messages insert failed:', err.message || err);
+        console.error('uniCloud messages insert failed:', err.message || err);
       }
 
       var mailOk = cloudOk ? false : await sendMailFallback(data, '建工青协留言反馈');

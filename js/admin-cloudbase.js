@@ -1,5 +1,5 @@
 /**
- * CloudBase 管理后台
+ * uniCloud 管理后台
  */
 (function () {
   'use strict';
@@ -67,8 +67,8 @@
     return ''
       + '<div class="admin-empty">'
       + '<h2>国内后端未配置</h2>'
-      + '<p>当前后台已经切换为 CloudBase 国内方案，但还没有填写环境 ID。</p>'
-      + '<p style="margin-top:8px;color:#999;">请创建腾讯云 CloudBase 环境后，修改 <code>js/backend-config.js</code> 中的 <code>envId</code>。</p>'
+      + '<p>当前后台已经切换为 uniCloud 免费方案，但还没有填写 API 地址。</p>'
+      + '<p style="margin-top:8px;color:#999;">请上传 uniCloud 云函数并开启 URL 化后，修改 <code>js/backend-config.js</code> 中的 <code>apiUrl</code>。</p>'
       + '<a href="index.html" class="btn btn-primary btn-sm" style="margin-top:16px;">返回前台</a>'
       + '</div>';
   }

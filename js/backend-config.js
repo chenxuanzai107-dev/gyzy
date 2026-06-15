@@ -1,16 +1,15 @@
 /**
  * 建工青协官网后端配置
  *
- * 最稳定的国内方案使用腾讯云 CloudBase。
- * 你创建 CloudBase 环境后，只需要把 envId 改成自己的环境 ID。
+ * 免费优先方案使用 uniCloud。云函数上传并开启 URL 化后，
+ * 把 apiUrl 填成 gyzy-api 的完整 HTTP 访问地址。
  */
 window.GYZY_BACKEND_CONFIG = {
-  provider: 'cloudbase',
-  cloudbase: {
-    envId: 'gyzy-d6gunz6ucb766e5f4',
-    region: 'ap-guangzhou',
-    enableAnonymousLogin: true,
-    storageRoot: 'site-assets'
+  provider: 'unicloud',
+  unicloud: {
+    serviceSpaceId: 'mp-53d28a73-8fcd-4a91-a0c1-16249a142f32',
+    apiUrl: '',
+    apiPath: '/gyzy-api'
   },
   collections: {
     applications: 'applications',

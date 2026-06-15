@@ -1,5 +1,5 @@
 /**
- * CloudBase 后台登录
+ * uniCloud 后台登录
  */
 (function () {
   'use strict';
@@ -25,7 +25,7 @@
 
   async function redirectIfLoggedIn() {
     if (!backendReady()) {
-      log('CloudBase 未配置');
+      log('uniCloud 未配置');
       return;
     }
     try {
@@ -38,7 +38,7 @@
   }
 
   if (!backendReady()) {
-    setError('国内后端尚未配置：请先在 js/backend-config.js 填写 CloudBase envId。');
+    setError('国内后端尚未配置：请先在 js/backend-config.js 填写 uniCloud apiUrl。');
   } else {
     redirectIfLoggedIn();
   }
@@ -48,7 +48,7 @@
     setError('');
 
     if (!backendReady()) {
-      setError('CloudBase 环境未配置，暂时无法登录后台。');
+      setError('uniCloud API 未配置，暂时无法登录后台。');
       return;
     }
 
@@ -61,7 +61,7 @@
     btn.textContent = '登录中...';
 
     try {
-      log('正在连接 CloudBase...');
+      log('正在连接 uniCloud...');
       await backend.login(email, password);
       log('登录成功，检查管理员权限...');
       await backend.requireAdmin();
@@ -73,7 +73,7 @@
       if (ex.code === 'NOT_ADMIN') {
         setError('当前账号无后台管理权限。');
       } else if (ex.code === 'NOT_CONFIGURED') {
-        setError('CloudBase 环境未配置。');
+        setError('uniCloud API 未配置。');
       } else if ((ex.message || '').toLowerCase().indexOf('password') >= 0 || (ex.message || '').toLowerCase().indexOf('login') >= 0) {
         setError('账号不存在或密码错误。');
       } else {
