@@ -7,7 +7,7 @@
 window.GYZY_BACKEND_CONFIG = {
   provider: 'cloudbase',
   cloudbase: {
-    envId: '', // 例如：gyzy-xxxxx。未填写时页面会使用静态兜底并提示配置。
+    envId: 'gyzy-d6gunz6ucb766e5f4',
     region: 'ap-guangzhou',
     enableAnonymousLogin: true,
     storageRoot: 'site-assets'
