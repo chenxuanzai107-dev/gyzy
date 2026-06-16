@@ -8,16 +8,15 @@ const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'u
 const publicCss = read('css/style.css');
 const adminCss = read('css/admin.css');
 const mainJs = read('js/main.js');
+const indexHtml = read('index.html');
 const htmlFiles = ['index.html', 'activity-detail.html', 'admin.html', 'login.html'];
 
 const requiredPublicTokens = [
-  '--red: #5F9F89',
-  '--red-dark: #4F8C77',
-  '--red-soft: #7CC8AF',
-  '--gold: #A8DCC9',
-  '--bg: #F8FFFB',
-  '--bg-soft: #F1FBF6',
-  '--border: #DCEFE6'
+  '--blue: #2563EB',
+  '--blue-dark: #0F172A',
+  '--blue-soft: #EAF1FF',
+  '--bg: #F8FAFF',
+  '--border: #E3EAF8'
 ];
 
 for (const token of requiredPublicTokens) {
@@ -25,31 +24,35 @@ for (const token of requiredPublicTokens) {
 }
 
 const requiredAdminTokens = [
-  '--admin-sidebar: #EAF8F1',
-  '--admin-primary: #5F9F89',
-  '--admin-primary-dark: #4F8C77',
-  '--admin-bg: #F8FFFB',
-  '--admin-border: #DCEFE6'
+  '--admin-sidebar: #EEF5FF',
+  '--admin-primary: #2563EB',
+  '--admin-primary-dark: #1D4ED8',
+  '--admin-bg: #F8FAFF',
+  '--admin-border: #E3EAF8'
 ];
 
 for (const token of requiredAdminTokens) {
   assert.ok(adminCss.includes(token), `admin CSS should include ${token}`);
 }
 
-const retiredHeavyColors = ['#9F1D14', '#7E1711', '#5C100D', '#A32018', '#F7F4F0', '#F6F4F1'];
-for (const color of retiredHeavyColors) {
+const retiredColors = ['#5F9F89', '#4F8C77', '#7CC8AF', '#A8DCC9', '#EAF8F1', '#DCEFE6', '#9F1D14', '#A32018'];
+for (const color of retiredColors) {
   assert.ok(!publicCss.includes(color), `public CSS should not include retired color ${color}`);
   assert.ok(!adminCss.includes(color), `admin CSS should not include retired color ${color}`);
 }
 
-assert.ok(!mainJs.includes('rgba(0,0,0,.62)'), 'hero image overlay should not use the old dark wash');
-assert.ok(mainJs.includes('rgba(248,255,251,.82)'), 'hero image overlay should use the healing mint wash');
+assert.ok(indexHtml.includes('class="hero-copy"'), 'homepage should include hero-copy structure');
+assert.ok(indexHtml.includes('class="hero-visual"'), 'homepage should include right-side hero visual');
+assert.ok(indexHtml.includes('class="metric-card"'), 'homepage should include reference-style metric cards');
+
+assert.ok(!mainJs.includes('rgba(248,255,251,.82)'), 'hero image overlay should not use the mint wash');
+assert.ok(mainJs.includes('rgba(248,250,255,.9)'), 'hero image overlay should use the minimal blue-white wash');
 
 for (const htmlFile of htmlFiles) {
   const html = read(htmlFile);
-  assert.ok(html.includes('v=healing-20260617'), `${htmlFile} should reference healing CSS version`);
+  assert.ok(html.includes('v=blue-20260617'), `${htmlFile} should reference blue CSS version`);
 }
 
-assert.ok(read('index.html').includes('js/main.js?v=healing-20260617'), 'index.html should reference refreshed main.js version');
+assert.ok(indexHtml.includes('js/main.js?v=blue-20260617'), 'index.html should reference refreshed main.js version');
 
 console.log('UI theme contract checks passed.');
