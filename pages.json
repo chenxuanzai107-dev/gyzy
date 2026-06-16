@@ -1,0 +1,13 @@
+{
+  "pages": [
+    {
+      "path": "pages/deploy/index",
+      "style": {
+        "navigationBarTitleText": "建工青协"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTitleText": "建工青协"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "gyzy-pages",
+  "appid": "__UNI__GYZY",
+  "description": "建工青协官网 uniCloud 部署壳项目",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "h5": {
+    "title": "建工青协"
+  },
+  "app-plus": {},
+  "mp-weixin": {}
+}
