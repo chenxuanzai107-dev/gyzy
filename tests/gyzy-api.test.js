@@ -2,8 +2,8 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 
-const apiPath = path.join(__dirname, '../uniCloud/cloudfunctions/gyzy-api/index.js');
-assert.ok(fs.existsSync(apiPath), 'Expected uniCloud/cloudfunctions/gyzy-api/index.js to exist');
+const apiPath = path.join(__dirname, '../uniCloud-aliyun/cloudfunctions/gyzy-api/index.js');
+assert.ok(fs.existsSync(apiPath), 'Expected uniCloud-aliyun/cloudfunctions/gyzy-api/index.js to exist');
 
 const api = require(apiPath);
 

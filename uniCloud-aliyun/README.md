@@ -29,15 +29,15 @@ site_settings
 admin_users
 ```
 
-Import seed data from `uniCloud/import/`:
+Import seed data from `uniCloud-aliyun/import/`:
 
 ```text
-activities     -> uniCloud/import/activities.json
-site_stats     -> uniCloud/import/site_stats.json
-site_settings  -> uniCloud/import/site_settings.json
-admin_users    -> uniCloud/import/admin_users.json
-applications   -> uniCloud/import/applications.json
-messages       -> uniCloud/import/messages.json
+activities     -> uniCloud-aliyun/import/activities.json
+site_stats     -> uniCloud-aliyun/import/site_stats.json
+site_settings  -> uniCloud-aliyun/import/site_settings.json
+admin_users    -> uniCloud-aliyun/import/admin_users.json
+applications   -> uniCloud-aliyun/import/applications.json
+messages       -> uniCloud-aliyun/import/messages.json
 ```
 
 The default admin seed is:
@@ -56,7 +56,7 @@ Change this email and password after import. The first migration uses a simple f
 Upload this folder as one cloud function:
 
 ```text
-uniCloud/cloudfunctions/gyzy-api
+uniCloud-aliyun/cloudfunctions/gyzy-api
 ```
 
 In the uniCloud console or HBuilderX:
@@ -76,7 +76,7 @@ In the uniCloud console or HBuilderX:
 
 1. 用 HBuilderX 打开 `C:\Users\ccc\gyzy-pages`。
 2. 绑定服务空间 `mp-53d28a73-8fcd-4a91-a0c1-16249a142f32`。
-3. 右键 `uniCloud/cloudfunctions/gyzy-api`，选择上传部署。
+3. 右键 `uniCloud-aliyun/cloudfunctions/gyzy-api`，选择上传部署。
 4. 在 uniCloud 控制台为 `gyzy-api` 开启 URL 化。
 5. URL 路径填：
 
