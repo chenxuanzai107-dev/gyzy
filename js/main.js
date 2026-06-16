@@ -120,7 +120,7 @@
 
     function setHero(url) {
       hero.style.backgroundImage =
-        'linear-gradient(90deg, rgba(0,0,0,.62), rgba(0,0,0,.28)), url("' + url + '")';
+        'linear-gradient(90deg, rgba(248,255,251,.82), rgba(241,251,246,.54)), url("' + url + '")';
     }
 
     try {
