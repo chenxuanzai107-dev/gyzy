@@ -18,7 +18,13 @@ Prefer the free Alibaba Cloud service space. Free spaces must be renewed manuall
 
 ## Collections
 
-Create these six database collections in the uniCloud web console:
+The database schemas and seed data are stored in:
+
+```text
+uniCloud-aliyun/database/
+```
+
+The folder contains six schemas and matching seed files:
 
 ```text
 applications
@@ -29,7 +35,12 @@ site_settings
 admin_users
 ```
 
-Import seed data from `uniCloud-aliyun/import/`:
+HBuilderX can initialize these from the `database` directory. If the full
+database initialization command times out while re-uploading schemas, upload
+the schemas first, then temporarily leave only `*.init_data.json` visible and
+run initialization again.
+
+The older raw seed copies remain in `uniCloud-aliyun/import/`:
 
 ```text
 activities     -> uniCloud-aliyun/import/activities.json

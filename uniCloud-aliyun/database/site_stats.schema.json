@@ -1,0 +1,28 @@
+{
+  "bsonType": "object",
+  "description": "Homepage statistics",
+  "required": [],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": {
+      "description": "Document ID"
+    },
+    "key": {
+      "bsonType": "string",
+      "description": "Statistic key"
+    },
+    "value": {
+      "description": "Statistic value"
+    },
+    "label": {
+      "bsonType": "string",
+      "description": "Display label"
+    }
+  }
+}

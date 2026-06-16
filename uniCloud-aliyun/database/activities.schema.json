@@ -1,0 +1,41 @@
+{
+  "bsonType": "object",
+  "description": "Public activity records",
+  "required": [],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": {
+      "description": "Document ID"
+    },
+    "title": {
+      "bsonType": "string",
+      "description": "Activity title"
+    },
+    "date": {
+      "bsonType": "string",
+      "description": "Activity date"
+    },
+    "location": {
+      "bsonType": "string",
+      "description": "Activity location"
+    },
+    "description": {
+      "bsonType": "string",
+      "description": "Activity description"
+    },
+    "is_featured": {
+      "bsonType": "bool",
+      "description": "Whether activity is featured"
+    },
+    "is_published": {
+      "bsonType": "bool",
+      "description": "Whether activity is public"
+    }
+  }
+}

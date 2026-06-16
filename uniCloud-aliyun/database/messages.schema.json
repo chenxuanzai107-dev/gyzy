@@ -1,0 +1,40 @@
+{
+  "bsonType": "object",
+  "description": "Contact form messages",
+  "required": [],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": {
+      "description": "Document ID"
+    },
+    "name": {
+      "bsonType": "string",
+      "description": "Sender name"
+    },
+    "phone": {
+      "bsonType": "string",
+      "description": "Sender phone"
+    },
+    "email": {
+      "bsonType": "string",
+      "description": "Sender email"
+    },
+    "message": {
+      "bsonType": "string",
+      "description": "Message body"
+    },
+    "status": {
+      "bsonType": "string",
+      "description": "Processing status"
+    },
+    "created_at": {
+      "description": "Created time"
+    }
+  }
+}

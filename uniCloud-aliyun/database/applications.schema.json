@@ -1,0 +1,36 @@
+{
+  "bsonType": "object",
+  "description": "Volunteer application submissions",
+  "required": [],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": {
+      "description": "Document ID"
+    },
+    "name": {
+      "bsonType": "string",
+      "description": "Applicant name"
+    },
+    "phone": {
+      "bsonType": "string",
+      "description": "Applicant phone"
+    },
+    "email": {
+      "bsonType": "string",
+      "description": "Applicant email"
+    },
+    "status": {
+      "bsonType": "string",
+      "description": "Review status"
+    },
+    "created_at": {
+      "description": "Created time"
+    }
+  }
+}

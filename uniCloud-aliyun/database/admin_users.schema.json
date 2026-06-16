@@ -1,0 +1,29 @@
+{
+  "bsonType": "object",
+  "description": "Simple admin users for the static site console",
+  "required": [],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": {
+      "description": "Document ID"
+    },
+    "email": {
+      "bsonType": "string",
+      "description": "Admin email"
+    },
+    "password": {
+      "bsonType": "string",
+      "description": "Admin password"
+    },
+    "role": {
+      "bsonType": "string",
+      "description": "Admin role"
+    }
+  }
+}
