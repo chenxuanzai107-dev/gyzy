@@ -8,7 +8,7 @@ window.GYZY_BACKEND_CONFIG = {
   provider: 'unicloud',
   unicloud: {
     serviceSpaceId: 'mp-53d28a73-8fcd-4a91-a0c1-16249a142f32',
-    apiUrl: '',
+    apiUrl: 'https://fc-mp-53d28a73-8fcd-4a91-a0c1-16249a142f32.next.bspapp.com/gyzy-api',
     apiPath: '/gyzy-api'
   },
   collections: {
