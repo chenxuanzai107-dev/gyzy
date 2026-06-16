@@ -43,16 +43,19 @@ for (const color of retiredColors) {
 
 assert.ok(indexHtml.includes('class="hero-copy"'), 'homepage should include hero-copy structure');
 assert.ok(indexHtml.includes('class="hero-visual"'), 'homepage should include right-side hero visual');
+assert.ok(indexHtml.includes('class="hero-banner-art"'), 'homepage should include visible banner artwork');
 assert.ok(indexHtml.includes('class="metric-card"'), 'homepage should include reference-style metric cards');
 
 assert.ok(!mainJs.includes('rgba(248,255,251,.82)'), 'hero image overlay should not use the mint wash');
 assert.ok(mainJs.includes('rgba(248,250,255,.9)'), 'hero image overlay should use the minimal blue-white wash');
+assert.ok(mainJs.includes("setProperty('--hero-image'"), 'hero image should feed the visible banner artwork');
+assert.ok(mainJs.includes('new URL(url, window.location.href)'), 'relative banner paths should resolve from the page URL');
 
 for (const htmlFile of htmlFiles) {
   const html = read(htmlFile);
-  assert.ok(html.includes('v=blue-20260617'), `${htmlFile} should reference blue CSS version`);
+  assert.ok(html.includes('v=blue-banner-20260617'), `${htmlFile} should reference blue banner CSS version`);
 }
 
-assert.ok(indexHtml.includes('js/main.js?v=blue-20260617'), 'index.html should reference refreshed main.js version');
+assert.ok(indexHtml.includes('js/main.js?v=blue-banner-20260617'), 'index.html should reference refreshed main.js version');
 
 console.log('UI theme contract checks passed.');

@@ -118,7 +118,13 @@
     if (!hero) return;
     var fallback = defaults.heroImage || 'assets/images/hero-building.png';
 
+    function cssImageUrl(url) {
+      var resolved = new URL(url, window.location.href).href;
+      return 'url("' + resolved.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '")';
+    }
+
     function setHero(url) {
+      hero.style.setProperty('--hero-image', cssImageUrl(url));
       hero.style.backgroundImage =
         'linear-gradient(90deg, rgba(248,250,255,.9), rgba(239,246,255,.58)), url("' + url + '")';
     }
