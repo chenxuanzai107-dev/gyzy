@@ -23,7 +23,15 @@ const ADMIN_ACTIONS = {
   addDocument: true,
   updateDocument: true,
   deleteDocument: true,
-  setSetting: true
+  setSetting: true,
+  uploadImage: true
+};
+
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const IMAGE_TYPES = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp'
 };
 
 function nowIso() {
@@ -270,6 +278,89 @@ function cleanPublicMessage(data) {
   return payload;
 }
 
+function validationError(message) {
+  return Object.assign(new Error(message), { code: 'VALIDATION_ERROR' });
+}
+
+function safeFolder(value) {
+  const folder = String(value || 'uploads')
+    .trim()
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => segment.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40))
+    .filter(Boolean)
+    .join('/');
+  return folder || 'uploads';
+}
+
+function decodeImagePayload(payload) {
+  const source = payload || {};
+  let mimeType = String(source.mimeType || source.type || '').trim().toLowerCase();
+  let base64 = String(source.base64 || '').trim();
+  const dataUrl = String(source.dataUrl || '').trim();
+
+  if (dataUrl) {
+    const match = dataUrl.match(/^data:([^;,]+);base64,(.+)$/);
+    if (!match) throw validationError('Invalid image data');
+    const dataUrlType = String(match[1] || '').toLowerCase();
+    if (mimeType && mimeType !== dataUrlType) throw validationError('Image type does not match data');
+    mimeType = dataUrlType;
+    base64 = match[2];
+  }
+
+  if (!IMAGE_TYPES[mimeType]) throw validationError('Only JPG, PNG, and WEBP images are supported');
+  if (!base64) throw validationError('Image data is required');
+
+  let buffer;
+  try {
+    buffer = Buffer.from(base64, 'base64');
+  } catch (err) {
+    throw validationError('Invalid image data');
+  }
+  if (!buffer.length) throw validationError('Image data is empty');
+  if (buffer.length > MAX_IMAGE_BYTES) throw validationError('Image cannot exceed 2MB');
+
+  return { buffer, mimeType, ext: IMAGE_TYPES[mimeType] };
+}
+
+async function resolveUploadUrl(fileID) {
+  if (!fileID) return '';
+  if (/^https?:\/\//i.test(fileID)) return fileID;
+  if (typeof uniCloud.getTempFileURL !== 'function') return fileID;
+  try {
+    const res = await uniCloud.getTempFileURL({ fileList: [fileID] });
+    const item = res && res.fileList && res.fileList[0];
+    return item && (item.tempFileURL || item.download_url || item.url) || fileID;
+  } catch (err) {
+    return fileID;
+  }
+}
+
+async function uploadImage(payload) {
+  if (!uniCloud || typeof uniCloud.uploadFile !== 'function') {
+    throw Object.assign(new Error('uniCloud storage is unavailable'), { code: 'STORAGE_UNAVAILABLE' });
+  }
+  const image = decodeImagePayload(payload);
+  const folder = safeFolder(payload && payload.folder);
+  const suffix = crypto.randomBytes(6).toString('hex');
+  const cloudPath = 'gyzy/' + folder + '/' + Date.now() + '-' + suffix + '.' + image.ext;
+  const res = await uniCloud.uploadFile({
+    cloudPath,
+    fileContent: image.buffer,
+    cloudPathAsRealPath: true
+  });
+  const fileID = res && (res.fileID || res.fileId || res.fileid || res.url) || cloudPath;
+  const url = await resolveUploadUrl(fileID);
+  return {
+    value: fileID,
+    url,
+    path: cloudPath,
+    size: image.buffer.length,
+    mimeType: image.mimeType
+  };
+}
+
 async function getPublicActivities(limit) {
   const count = Math.min(Number(limit) || 6, 20);
   const featured = await listRows('activities', {
@@ -338,6 +429,7 @@ async function handleAction(event, payload) {
   if (action === 'updateDocument') return updateRow(payload.collection, payload.id, payload.data || {});
   if (action === 'deleteDocument') return deleteRow(payload.collection, payload.id);
   if (action === 'setSetting') return setSetting(payload.key, payload.value);
+  if (action === 'uploadImage') return uploadImage(payload);
 
   throw Object.assign(new Error('Unknown action: ' + action), { code: 'UNKNOWN_ACTION' });
 }

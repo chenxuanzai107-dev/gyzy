@@ -330,7 +330,7 @@
       + field('activityHours', '服务时长', row && row.service_hours, 'number')
       + '<div class="form-group form-full"><label>活动封面</label><div id="coverUploadArea" class="cover-upload-area">'
       + '<input type="file" id="activityCoverFile" accept="image/jpeg,image/png,image/webp" hidden>'
-      + '<div id="coverPlaceholder" ' + (coverUrl ? 'style="display:none;"' : '') + '><div class="cover-upload-icon">图片</div><p>点击或拖拽上传活动封面</p><small>JPG/PNG/WEBP，最大 5MB</small></div>'
+      + '<div id="coverPlaceholder" ' + (coverUrl ? 'style="display:none;"' : '') + '><div class="cover-upload-icon">图片</div><p>点击或拖拽上传活动封面</p><small>JPG/PNG/WEBP，最大 2MB</small></div>'
       + '<div id="coverPreview" class="cover-preview" ' + (coverUrl ? '' : 'style="display:none;"') + '><img id="coverPreviewImg" src="' + e(coverUrl) + '" alt="活动封面预览"><div class="cover-preview-actions"><button type="button" id="changeCoverBtn" class="btn btn-sm btn-outline">更换图片</button><button type="button" id="removeCoverBtn" class="btn btn-sm btn-outline">移除图片</button></div></div>'
       + '</div><input type="hidden" id="activityCover" value="' + e(cover) + '"></div>'
       + '<div class="form-group form-full"><label for="activityDesc">活动简介</label><textarea id="activityDesc">' + e(row && row.description) + '</textarea></div>'
@@ -378,7 +378,7 @@
   function handleCoverFile(file) {
     if (!file) return;
     if (['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) { alert('只支持 JPG、PNG、WEBP 图片'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('图片不能超过 5MB'); return; }
+    if (file.size > 2 * 1024 * 1024) { alert('图片不能超过 2MB'); return; }
     selectedCoverFile = file;
     document.getElementById('coverPreviewImg').src = URL.createObjectURL(file);
     document.getElementById('coverPreview').style.display = 'block';
@@ -464,9 +464,9 @@
   async function renderHomeSettings() {
     selectedHeroFile = null;
     loadContent('<h2>首页设置</h2><div class="form-card" style="max-width:760px;background:#fff;border:1px solid var(--admin-border);border-radius:8px;padding:22px;">'
-      + '<h3 style="margin-bottom:10px;">首页 Banner 图片</h3><p style="color:#666;font-size:13px;margin-bottom:14px;">点击或拖拽上传首页大图，建议 16:9 或 21:9，最大 5MB。</p>'
+      + '<h3 style="margin-bottom:10px;">首页 Banner 图片</h3><p style="color:#666;font-size:13px;margin-bottom:14px;">点击或拖拽上传首页大图，建议 16:9 或 21:9，最大 2MB。</p>'
       + '<div id="heroUploadArea" class="cover-upload-area"><input type="file" id="heroImageInput" accept="image/jpeg,image/png,image/webp" hidden>'
-      + '<div id="heroUploadPlaceholder"><div class="cover-upload-icon">图片</div><p>点击或拖拽上传首页大图</p><small>JPG/PNG/WEBP，最大 5MB</small></div>'
+      + '<div id="heroUploadPlaceholder"><div class="cover-upload-icon">图片</div><p>点击或拖拽上传首页大图</p><small>JPG/PNG/WEBP，最大 2MB</small></div>'
       + '<div id="heroPreviewWrap" class="cover-preview" style="display:none;"><img id="heroPreviewImg" src="" alt="首页 Banner 预览"><div class="cover-preview-actions"><button type="button" id="changeHeroImageBtn" class="btn btn-sm btn-outline">更换图片</button></div></div></div>'
       + '<div style="display:flex;gap:10px;margin-top:14px;"><button id="saveHeroBannerBtn" class="btn btn-primary">保存为首页 Banner</button><button id="resetHeroBannerBtn" class="btn btn-outline">恢复默认</button></div>'
       + '<p id="heroSettingMessage" class="form-message"></p></div>');
@@ -507,7 +507,7 @@
   function handleHeroFile(file) {
     if (!file) return;
     if (['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) { showHeroMessage('只支持 JPG、PNG、WEBP 图片', true); return; }
-    if (file.size > 5 * 1024 * 1024) { showHeroMessage('图片不能超过 5MB', true); return; }
+    if (file.size > 2 * 1024 * 1024) { showHeroMessage('图片不能超过 2MB', true); return; }
     selectedHeroFile = file;
     document.getElementById('heroPreviewImg').src = URL.createObjectURL(file);
     document.getElementById('heroUploadPlaceholder').style.display = 'none';

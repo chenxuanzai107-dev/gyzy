@@ -10,6 +10,8 @@
   var defaults = config.defaults || {};
   var TOKEN_KEY = 'gyzy_unicloud_admin_token';
   var ADMIN_KEY = 'gyzy_unicloud_admin';
+  var MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+  var IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
   function backendError(message, code) {
     var err = new Error(message || 'uniCloud request failed');
@@ -154,8 +156,49 @@
     return callApi('deleteDocument', { collection: collection, id: id }, { admin: true });
   }
 
-  async function uploadImage() {
-    throw backendError('Image upload is not enabled in this free uniCloud migration yet. Use an image URL first.', 'UPLOAD_UNSUPPORTED');
+  function arrayBufferToBase64(buffer) {
+    var bytes = new Uint8Array(buffer);
+    var binary = '';
+    var chunkSize = 0x8000;
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      var chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, chunk);
+    }
+    if (typeof btoa === 'function') return btoa(binary);
+    if (typeof Buffer !== 'undefined') return Buffer.from(binary, 'binary').toString('base64');
+    throw backendError('This browser cannot encode image data.', 'UPLOAD_UNSUPPORTED');
+  }
+
+  function readFileAsDataUrl(file) {
+    if (typeof FileReader !== 'undefined') {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || '')); };
+        reader.onerror = function () { reject(backendError('Failed to read image file.', 'FILE_READ_FAILED')); };
+        reader.readAsDataURL(file);
+      });
+    }
+    if (file && typeof file.arrayBuffer === 'function') {
+      return file.arrayBuffer().then(function (buffer) {
+        return 'data:' + file.type + ';base64,' + arrayBufferToBase64(buffer);
+      });
+    }
+    return Promise.reject(backendError('This browser cannot read image files.', 'UPLOAD_UNSUPPORTED'));
+  }
+
+  async function uploadImage(file, folder) {
+    if (!file) throw backendError('请选择图片文件。', 'NO_FILE');
+    if (IMAGE_TYPES.indexOf(file.type) === -1) throw backendError('只支持 JPG、PNG、WEBP 图片。', 'INVALID_FILE_TYPE');
+    if (file.size > MAX_IMAGE_BYTES) throw backendError('图片不能超过 2MB。', 'FILE_TOO_LARGE');
+
+    var dataUrl = await readFileAsDataUrl(file);
+    return callApi('uploadImage', {
+      folder: folder || 'uploads',
+      fileName: file.name || '',
+      mimeType: file.type,
+      size: file.size || 0,
+      dataUrl: dataUrl
+    }, { admin: true });
   }
 
   async function resolveFileUrl(value) {

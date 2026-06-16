@@ -48,11 +48,21 @@ const sandbox = {
     if (payload.action === 'uploadImage') {
       return {
         ok: true,
-        text: async () => JSON.stringify({ ok: false, code: 'UPLOAD_UNSUPPORTED', message: 'unsupported' })
+        text: async () => JSON.stringify({
+          ok: true,
+          data: {
+            value: 'cloud://mock-space/gyzy/hero/x.png',
+            url: 'https://static.example.com/gyzy/hero/x.png',
+            path: 'gyzy/hero/x.png'
+          }
+        })
       };
     }
     return { ok: true, text: async () => JSON.stringify({ ok: true, data: [] }) };
   },
+  btoa: (value) => Buffer.from(value, 'binary').toString('base64'),
+  Uint8Array,
+  ArrayBuffer,
   FormData: class FormData {}
 };
 sandbox.globalThis = sandbox;
@@ -70,13 +80,35 @@ vm.runInContext(fs.readFileSync(wrapperPath, 'utf8'), sandbox);
   const headers = calls[calls.length - 1].options.headers;
   assert.strictEqual(headers.Authorization, 'Bearer token123');
 
-  await sandbox.window.gyzyBackend.logout();
-  assert.strictEqual(storage.gyzy_unicloud_admin_token, undefined);
+  const upload = await sandbox.window.gyzyBackend.uploadImage({
+    type: 'image/png',
+    size: 5,
+    name: 'x.png',
+    arrayBuffer: async () => Uint8Array.from([104, 101, 108, 108, 111]).buffer
+  }, 'hero');
+  assert.strictEqual(upload.url, 'https://static.example.com/gyzy/hero/x.png');
+
+  const uploadCall = calls[calls.length - 1];
+  assert.strictEqual(uploadCall.options.headers.Authorization, 'Bearer token123');
+  const uploadPayload = JSON.parse(uploadCall.options.body);
+  assert.strictEqual(uploadPayload.action, 'uploadImage');
+  assert.strictEqual(uploadPayload.folder, 'hero');
+  assert.strictEqual(uploadPayload.fileName, 'x.png');
+  assert.strictEqual(uploadPayload.mimeType, 'image/png');
+  assert.strictEqual(uploadPayload.dataUrl, 'data:image/png;base64,aGVsbG8=');
 
   await assert.rejects(
-    () => sandbox.window.gyzyBackend.uploadImage({ type: 'image/png', size: 10, name: 'x.png' }, 'hero'),
-    (err) => err.code === 'UPLOAD_UNSUPPORTED'
+    () => sandbox.window.gyzyBackend.uploadImage({ type: 'image/gif', size: 10, name: 'x.gif' }, 'hero'),
+    (err) => err.code === 'INVALID_FILE_TYPE'
   );
+
+  await assert.rejects(
+    () => sandbox.window.gyzyBackend.uploadImage({ type: 'image/png', size: 2 * 1024 * 1024 + 1, name: 'large.png' }, 'hero'),
+    (err) => err.code === 'FILE_TOO_LARGE'
+  );
+
+  await sandbox.window.gyzyBackend.logout();
+  assert.strictEqual(storage.gyzy_unicloud_admin_token, undefined);
 
   console.log('unicloud-backend tests passed');
 })().catch((err) => {

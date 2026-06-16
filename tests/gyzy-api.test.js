@@ -51,6 +51,7 @@ function makeCollection(rows) {
 }
 
 function installMockUniCloud() {
+  const uploads = [];
   const data = {
     activities: [
       { _id: 'a1', title: 'Published', date: '2026-01-01', is_published: true, is_featured: true },
@@ -71,10 +72,25 @@ function installMockUniCloud() {
           return makeCollection(data[name]);
         }
       };
+    },
+    async uploadFile(options) {
+      uploads.push(options);
+      return {
+        fileID: 'cloud://mock-space/' + options.cloudPath,
+        requestId: 'upload-request-1'
+      };
+    },
+    async getTempFileURL(options) {
+      return {
+        fileList: options.fileList.map((fileID) => ({
+          fileID,
+          tempFileURL: 'https://static.example.com/' + fileID.replace(/^cloud:\/\/mock-space\//, '')
+        }))
+      };
     }
   };
 
-  return data;
+  return { data, uploads };
 }
 
 async function call(body, headers) {
@@ -87,7 +103,7 @@ async function call(body, headers) {
 }
 
 (async () => {
-  installMockUniCloud();
+  const mock = installMockUniCloud();
 
   const preflight = await api.main({
     httpMethod: 'OPTIONS',
@@ -137,6 +153,71 @@ async function call(body, headers) {
   )).body);
   assert.strictEqual(listed.ok, true);
   assert.strictEqual(listed.data.length, 1);
+
+  const upload = JSON.parse((await call(
+    {
+      action: 'uploadImage',
+      folder: 'hero',
+      fileName: 'banner.png',
+      mimeType: 'image/png',
+      dataUrl: 'data:image/png;base64,aGVsbG8='
+    },
+    {
+      origin: 'https://chenxuanzai107-dev.github.io',
+      authorization: 'Bearer ' + login.data.token
+    }
+  )).body);
+  assert.strictEqual(upload.ok, true);
+  assert.strictEqual(upload.data.mimeType, 'image/png');
+  assert.strictEqual(upload.data.size, 5);
+  assert.match(upload.data.path, /^gyzy\/hero\/\d+-[a-f0-9]+\.png$/);
+  assert.strictEqual(upload.data.url, 'https://static.example.com/' + upload.data.path);
+  assert.strictEqual(mock.uploads.length, 1);
+  assert.ok(Buffer.isBuffer(mock.uploads[0].fileContent));
+  assert.strictEqual(mock.uploads[0].fileContent.toString('utf8'), 'hello');
+  assert.strictEqual(mock.uploads[0].cloudPathAsRealPath, true);
+
+  const uploadDenied = JSON.parse((await call({
+    action: 'uploadImage',
+    folder: 'hero',
+    fileName: 'banner.png',
+    mimeType: 'image/png',
+    dataUrl: 'data:image/png;base64,aGVsbG8='
+  })).body);
+  assert.strictEqual(uploadDenied.ok, false);
+  assert.strictEqual(uploadDenied.code, 'UNAUTHORIZED');
+
+  const invalidUpload = JSON.parse((await call(
+    {
+      action: 'uploadImage',
+      folder: 'hero',
+      fileName: 'banner.gif',
+      mimeType: 'image/gif',
+      dataUrl: 'data:image/gif;base64,aGVsbG8='
+    },
+    {
+      origin: 'https://chenxuanzai107-dev.github.io',
+      authorization: 'Bearer ' + login.data.token
+    }
+  )).body);
+  assert.strictEqual(invalidUpload.ok, false);
+  assert.strictEqual(invalidUpload.code, 'VALIDATION_ERROR');
+
+  const largeUpload = JSON.parse((await call(
+    {
+      action: 'uploadImage',
+      folder: 'hero',
+      fileName: 'large.png',
+      mimeType: 'image/png',
+      dataUrl: 'data:image/png;base64,' + Buffer.alloc(2 * 1024 * 1024 + 1).toString('base64')
+    },
+    {
+      origin: 'https://chenxuanzai107-dev.github.io',
+      authorization: 'Bearer ' + login.data.token
+    }
+  )).body);
+  assert.strictEqual(largeUpload.ok, false);
+  assert.strictEqual(largeUpload.code, 'VALIDATION_ERROR');
 
   console.log('gyzy-api tests passed');
 })().catch((err) => {

@@ -152,8 +152,10 @@ Commit and push the change to GitHub Pages after filling the URL.
 - Keep one cloud function only.
 - Do not add scheduled tasks.
 - Keep static hosting on GitHub Pages.
-- Keep image upload disabled in the first pass.
-- Use external image URLs or local static images for now.
+- Image upload is enabled for admin users through `gyzy-api`.
+- Keep uploaded images small. The browser and cloud function both limit each image to 2 MB.
+- Uploaded images use uniCloud cloud storage and CDN traffic quota.
+- External image URLs still work for activity covers and the homepage Banner.
 - Renew the free service space before it expires.
 
 ## Verification
@@ -166,7 +168,8 @@ After deployment:
 4. Open `login.html`.
 5. Log in with the admin seed account.
 6. Confirm the admin dashboard can list applications, messages, activities, stats, and settings.
-7. Change the admin seed password in `admin_users`.
+7. Upload one small Banner image and confirm the homepage uses it.
+8. Change the admin seed password in `admin_users`.
 
 ## Troubleshooting
 
