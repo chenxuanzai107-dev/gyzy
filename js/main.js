@@ -163,6 +163,79 @@
     el.textContent = num + '+';
   }
 
+  function parseMaybeJson(value, fallback) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      try {
+        var parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : fallback;
+      } catch (err) {
+        return fallback;
+      }
+    }
+    return fallback;
+  }
+
+  function normalizeGalleryItems(value) {
+    return parseMaybeJson(value, []).filter(function (item) {
+      return item && item.image;
+    }).slice(0, 8);
+  }
+
+  async function resolveImageValue(value) {
+    if (!value) return '';
+    if (backendReady() && !/^https?:\/\//i.test(value) && !/^data:/i.test(value) && !/^blob:/i.test(value)) {
+      try {
+        return await backend.resolveFileUrl(value);
+      } catch (err) {
+        console.warn('图片解析失败：', err.message || err);
+      }
+    }
+    return value;
+  }
+
+  async function loadHomeGallery(revealObserver) {
+    var section = document.getElementById('home-gallery');
+    var grid = document.getElementById('homeGalleryGrid');
+    if (!section || !grid || !backendReady()) return;
+
+    try {
+      var value = await backend.getSetting('home_gallery');
+      var items = normalizeGalleryItems(value);
+      if (!items.length) return;
+      await renderHomeGallery(section, grid, items, revealObserver);
+    } catch (err) {
+      console.warn('首页照片墙加载失败：', err.message || err);
+    }
+  }
+
+  async function renderHomeGallery(section, grid, items, revealObserver) {
+    var cards = await Promise.all(items.map(async function (item) {
+      var image = await resolveImageValue(item.image);
+      if (!image) return '';
+      var title = esc(item.title || '部门风采');
+      var desc = esc(item.description || '');
+      var category = esc(item.category || 'Photo');
+      return ''
+        + '<article class="gallery-card reveal">'
+        + '<img src="' + esc(image) + '" alt="' + title + '" loading="lazy">'
+        + '<div class="gallery-card-body">'
+        + '<span class="gallery-card-kicker">' + category + '</span>'
+        + '<h3>' + title + '</h3>'
+        + (desc ? '<p>' + desc + '</p>' : '')
+        + '</div></article>';
+    }));
+    var html = cards.filter(Boolean).join('');
+    if (!html) return;
+    grid.innerHTML = html;
+    section.hidden = false;
+    if (revealObserver) {
+      grid.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
+    } else {
+      grid.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  }
+
   async function loadLocalActivities() {
     var localRes = await fetch('data/activities.json', { cache: 'no-store' });
     var localData = await safeJson(localRes);
@@ -208,11 +281,13 @@
 
   async function renderActivities(container, activities, revealObserver) {
     if (!Array.isArray(activities) || activities.length === 0) {
+      var activityToggle = document.getElementById('activityToggle');
+      if (activityToggle) activityToggle.hidden = true;
       container.innerHTML = '<div class="activities-empty">暂无活动内容</div>';
       return;
     }
 
-    var cards = await Promise.all(activities.map(async function (activity) {
+    var cards = await Promise.all(activities.map(async function (activity, index) {
       var idRaw = activity._id || activity.id || '';
       var id = encodeURIComponent(idRaw);
       var title = esc(activity.title || '未命名活动');
@@ -230,7 +305,7 @@
         : '<div class="activity-cover-placeholder">建工青协</div>';
 
       return ''
-        + '<article class="activity-card reveal">'
+        + '<article class="activity-card reveal" ' + (index >= 3 ? 'hidden data-activity-extra="true"' : '') + '>'
         + '<a class="activity-cover" href="' + detailUrl + '" aria-label="查看' + title + '详情">' + coverHtml + '</a>'
         + '<div class="activity-body">'
         + '<div class="activity-topline"><span class="activity-category">' + category + '</span><span class="activity-date">' + date + '</span></div>'
@@ -246,11 +321,30 @@
     }));
 
     container.innerHTML = cards.join('');
+    bindActivityToggle(container, activities.length);
     if (revealObserver) {
       container.querySelectorAll('.reveal').forEach(function (el) { revealObserver.observe(el); });
     } else {
       container.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
     }
+  }
+
+  function bindActivityToggle(container, total) {
+    var activityToggle = document.getElementById('activityToggle');
+    if (!activityToggle) return;
+    var extras = Array.prototype.slice.call(container.querySelectorAll('[data-activity-extra="true"]'));
+    if (total <= 3 || !extras.length) {
+      activityToggle.hidden = true;
+      return;
+    }
+    var expanded = false;
+    activityToggle.hidden = false;
+    activityToggle.textContent = '展开更多';
+    activityToggle.onclick = function () {
+      expanded = !expanded;
+      extras.forEach(function (card) { card.hidden = !expanded; });
+      activityToggle.textContent = expanded ? '收起活动' : '展开更多';
+    };
   }
 
   async function sendMailFallback(data, subject) {
@@ -411,6 +505,7 @@
   initBackToTop();
   loadHeroImage();
   loadStats();
+  loadHomeGallery(revealObserver);
   loadActivities(revealObserver);
   initRegistrationForm();
   initFeedbackForm();

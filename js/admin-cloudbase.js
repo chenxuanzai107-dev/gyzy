@@ -9,8 +9,18 @@
   var currentTab = 'dashboard';
   var currentAdmin = null;
   var selectedHeroFile = null;
+  var selectedGalleryFiles = {};
+  var gallerySettings = [];
   var selectedCoverFile = null;
   var currentEditingActivity = null;
+  var DEFAULT_GALLERY_ITEMS = [
+    { title: '协会合影', category: 'Photo', description: '建工青协大家庭的温暖瞬间', image: '' },
+    { title: '秘书部', category: 'Department', description: '日常事务、资料归档与组织协调', image: '' },
+    { title: '组织部', category: 'Department', description: '成员管理、活动统筹与队伍建设', image: '' },
+    { title: '行动部', category: 'Department', description: '活动执行、现场服务与秩序维护', image: '' },
+    { title: '外联部', category: 'Department', description: '资源联系、公益合作与对外交流', image: '' },
+    { title: '网宣部', category: 'Department', description: '影像记录、推文制作与视觉宣传', image: '' }
+  ];
 
   function e(value) {
     return String(value == null ? '' : value)
@@ -461,17 +471,223 @@
     return backend.addDocument('siteStats', { key: key, value: value });
   }
 
+  function parseGallerySetting(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      try {
+        var parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  function normalizeGallerySettings(value) {
+    var saved = parseGallerySetting(value);
+    return DEFAULT_GALLERY_ITEMS.map(function (fallback, index) {
+      var item = saved[index] || {};
+      return {
+        title: item.title || fallback.title,
+        category: item.category || fallback.category,
+        description: item.description || fallback.description,
+        image: item.image || ''
+      };
+    });
+  }
+
+  function renderGalleryEditor() {
+    return ''
+      + '<div class="form-card gallery-settings">'
+      + '<div class="gallery-settings-head"><div><h3>首页照片墙 / 部门风采</h3><p>主页最多展示 6 张照片。没有图片的槽位不会显示，适合放合影、部门活动照和志愿服务现场。</p></div>'
+      + '<button type="button" id="resetHomeGalleryBtn" class="btn btn-sm btn-outline">恢复默认文案</button></div>'
+      + '<div id="gallerySettingsPanel">' + renderGallerySlots() + '</div>'
+      + '<div class="gallery-actions"><button id="saveHomeGalleryBtn" class="btn btn-primary">保存照片墙</button><p id="gallerySettingMessage" class="form-message"></p></div>'
+      + '</div>';
+  }
+
+  function renderGallerySlots() {
+    return '<div class="gallery-editor-grid">' + gallerySettings.map(function (item, index) {
+      var hasImage = !!item.image;
+      return ''
+        + '<article class="gallery-editor-card" data-gallery-index="' + index + '">'
+        + '<div class="gallery-editor-title"><span>照片 ' + (index + 1) + '</span><strong>' + e(item.title) + '</strong></div>'
+        + '<div id="galleryUploadArea' + index + '" class="cover-upload-area gallery-upload-area">'
+        + '<input type="file" id="galleryFile' + index + '" accept="image/jpeg,image/png,image/webp" hidden>'
+        + '<div id="galleryPlaceholder' + index + '" class="gallery-placeholder" ' + (hasImage ? 'hidden' : '') + '><div class="cover-upload-icon">图片</div><p>点击或拖拽上传</p><small>也可以在下方粘贴图片 URL</small></div>'
+        + '<div id="galleryPreview' + index + '" class="gallery-preview" ' + (hasImage ? '' : 'hidden') + '><img id="galleryPreviewImg' + index + '" src="' + e(item.image) + '" alt="' + e(item.title) + '预览"><div class="cover-preview-actions"><button type="button" class="btn btn-sm btn-outline" data-gallery-change="' + index + '">更换</button><button type="button" class="btn btn-sm btn-outline" data-gallery-remove="' + index + '">移除</button></div></div>'
+        + '</div>'
+        + '<div class="gallery-editor-fields">'
+        + '<label for="galleryTitle' + index + '">标题</label><input id="galleryTitle' + index + '" type="text" value="' + e(item.title) + '">'
+        + '<label for="galleryCategory' + index + '">分类</label><input id="galleryCategory' + index + '" type="text" value="' + e(item.category) + '">'
+        + '<label for="galleryImage' + index + '">图片链接</label><input id="galleryImage' + index + '" type="url" value="' + e(item.image) + '" placeholder="https://...">'
+        + '<label for="galleryDesc' + index + '">说明</label><textarea id="galleryDesc' + index + '" rows="2">' + e(item.description) + '</textarea>'
+        + '</div></article>';
+    }).join('') + '</div>';
+  }
+
+  function refreshGalleryEditor() {
+    var panel = document.getElementById('gallerySettingsPanel');
+    if (panel) panel.innerHTML = renderGallerySlots();
+  }
+
+  async function loadCurrentHomeGallery() {
+    try {
+      var value = await backend.getSetting('home_gallery');
+      gallerySettings = normalizeGallerySettings(value);
+      refreshGalleryEditor();
+    } catch (err) {
+      console.warn('读取首页照片墙失败:', err);
+    }
+  }
+
+  function bindGalleryEvents() {
+    gallerySettings.forEach(function (_item, index) {
+      var area = document.getElementById('galleryUploadArea' + index);
+      var input = document.getElementById('galleryFile' + index);
+      var imageInput = document.getElementById('galleryImage' + index);
+      if (!area || !input || !imageInput) return;
+
+      area.addEventListener('click', function (evt) {
+        if (evt.target.closest('[data-gallery-change]') || evt.target.closest('[data-gallery-remove]')) return;
+        input.click();
+      });
+      input.addEventListener('change', function () { handleGalleryFile(index, input.files && input.files[0]); });
+      imageInput.addEventListener('input', function () {
+        selectedGalleryFiles[index] = null;
+        updateGalleryPreview(index, imageInput.value.trim());
+      });
+      area.addEventListener('dragover', function (evt) { evt.preventDefault(); area.classList.add('drag-over'); });
+      area.addEventListener('dragleave', function () { area.classList.remove('drag-over'); });
+      area.addEventListener('drop', function (evt) {
+        evt.preventDefault();
+        area.classList.remove('drag-over');
+        handleGalleryFile(index, evt.dataTransfer.files && evt.dataTransfer.files[0]);
+      });
+    });
+
+    document.querySelectorAll('[data-gallery-change]').forEach(function (btn) {
+      btn.addEventListener('click', function (evt) {
+        evt.stopPropagation();
+        var index = Number(btn.getAttribute('data-gallery-change'));
+        var input = document.getElementById('galleryFile' + index);
+        if (input) input.click();
+      });
+    });
+
+    document.querySelectorAll('[data-gallery-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function (evt) {
+        evt.stopPropagation();
+        var index = Number(btn.getAttribute('data-gallery-remove'));
+        selectedGalleryFiles[index] = null;
+        var imageInput = document.getElementById('galleryImage' + index);
+        if (imageInput) imageInput.value = '';
+        updateGalleryPreview(index, '');
+      });
+    });
+
+    var saveBtn = document.getElementById('saveHomeGalleryBtn');
+    if (saveBtn) saveBtn.onclick = saveHomeGallery;
+    var resetBtn = document.getElementById('resetHomeGalleryBtn');
+    if (resetBtn) resetBtn.onclick = function () {
+      selectedGalleryFiles = {};
+      gallerySettings = normalizeGallerySettings([]);
+      refreshGalleryEditor();
+      bindGalleryEvents();
+      showGalleryMessage('已恢复默认文案，保存后才会同步到前台。', false);
+    };
+  }
+
+  function showGalleryMessage(message, isError) {
+    var el = document.getElementById('gallerySettingMessage');
+    if (!el) return;
+    el.textContent = message || '';
+    el.className = 'form-message ' + (isError ? 'error' : 'success');
+  }
+
+  function updateGalleryPreview(index, url) {
+    var placeholder = document.getElementById('galleryPlaceholder' + index);
+    var preview = document.getElementById('galleryPreview' + index);
+    var img = document.getElementById('galleryPreviewImg' + index);
+    if (!placeholder || !preview || !img) return;
+    if (url) {
+      img.src = url;
+      placeholder.hidden = true;
+      preview.hidden = false;
+    } else {
+      img.src = '';
+      placeholder.hidden = false;
+      preview.hidden = true;
+    }
+  }
+
+  function handleGalleryFile(index, file) {
+    if (!file) return;
+    if (['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) { showGalleryMessage('只支持 JPG、PNG、WEBP 图片', true); return; }
+    if (file.size > 2 * 1024 * 1024) { showGalleryMessage('图片不能超过 2MB', true); return; }
+    selectedGalleryFiles[index] = file;
+    updateGalleryPreview(index, URL.createObjectURL(file));
+    showGalleryMessage('已选择照片 ' + (index + 1) + '：' + file.name, false);
+  }
+
+  function readGalleryForm() {
+    return gallerySettings.map(function (_item, index) {
+      return {
+        title: document.getElementById('galleryTitle' + index).value.trim() || DEFAULT_GALLERY_ITEMS[index].title,
+        category: document.getElementById('galleryCategory' + index).value.trim() || DEFAULT_GALLERY_ITEMS[index].category,
+        description: document.getElementById('galleryDesc' + index).value.trim(),
+        image: document.getElementById('galleryImage' + index).value.trim()
+      };
+    });
+  }
+
+  async function saveHomeGallery() {
+    var btn = document.getElementById('saveHomeGalleryBtn');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+    showGalleryMessage('', false);
+    try {
+      var next = readGalleryForm();
+      for (var i = 0; i < next.length; i++) {
+        var file = selectedGalleryFiles[i];
+        if (file) {
+          var upload = await backend.uploadImage(file, 'gallery');
+          next[i].image = upload.value || upload.url || next[i].image;
+        }
+      }
+      gallerySettings = normalizeGallerySettings(next);
+      await backend.setSetting('home_gallery', gallerySettings);
+      selectedGalleryFiles = {};
+      refreshGalleryEditor();
+      bindGalleryEvents();
+      showGalleryMessage('首页照片墙已保存，请刷新前台首页查看。', false);
+    } catch (err) {
+      console.error('首页照片墙保存失败:', err);
+      showGalleryMessage((err && err.message) || '保存首页照片墙失败', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '保存照片墙';
+    }
+  }
+
   async function renderHomeSettings() {
     selectedHeroFile = null;
+    selectedGalleryFiles = {};
+    gallerySettings = normalizeGallerySettings([]);
     loadContent('<h2>首页设置</h2><div class="form-card" style="max-width:760px;background:#fff;border:1px solid var(--admin-border);border-radius:8px;padding:22px;">'
       + '<h3 style="margin-bottom:10px;">首页 Banner 图片</h3><p style="color:#666;font-size:13px;margin-bottom:14px;">点击或拖拽上传首页大图，建议 16:9 或 21:9，最大 2MB。</p>'
       + '<div id="heroUploadArea" class="cover-upload-area"><input type="file" id="heroImageInput" accept="image/jpeg,image/png,image/webp" hidden>'
       + '<div id="heroUploadPlaceholder"><div class="cover-upload-icon">图片</div><p>点击或拖拽上传首页大图</p><small>JPG/PNG/WEBP，最大 2MB</small></div>'
       + '<div id="heroPreviewWrap" class="cover-preview" style="display:none;"><img id="heroPreviewImg" src="" alt="首页 Banner 预览"><div class="cover-preview-actions"><button type="button" id="changeHeroImageBtn" class="btn btn-sm btn-outline">更换图片</button></div></div></div>'
       + '<div style="display:flex;gap:10px;margin-top:14px;"><button id="saveHeroBannerBtn" class="btn btn-primary">保存为首页 Banner</button><button id="resetHeroBannerBtn" class="btn btn-outline">恢复默认</button></div>'
-      + '<p id="heroSettingMessage" class="form-message"></p></div>');
+      + '<p id="heroSettingMessage" class="form-message"></p></div>'
+      + renderGalleryEditor());
     await loadCurrentHeroImage();
+    await loadCurrentHomeGallery();
     bindHomeSettingsEvents();
+    bindGalleryEvents();
   }
 
   function bindHomeSettingsEvents() {

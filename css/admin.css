@@ -116,6 +116,26 @@ body{font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;font-
 .cover-preview img{width:100%;height:180px;object-fit:cover;display:block;border-radius:10px}
 .cover-preview-actions{display:flex;gap:8px;margin-top:8px;justify-content:center}
 
+/* Homepage gallery settings */
+.gallery-settings{max-width:1040px;background:#fff;border:1px solid var(--admin-border);border-radius:8px;padding:22px;margin-top:18px}
+.gallery-settings-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.gallery-settings-head h3{margin-bottom:6px;font-size:18px}
+.gallery-settings-head p{color:var(--admin-muted);font-size:13px;max-width:680px}
+.gallery-editor-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.gallery-editor-card{border:1px solid var(--admin-border);border-radius:12px;background:#F8FAFF;padding:12px}
+.gallery-editor-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;color:var(--admin-muted);font-size:12px}
+.gallery-editor-title strong{color:var(--admin-text);font-size:13px}
+.gallery-upload-area{padding:12px;margin-bottom:10px}
+.gallery-placeholder[hidden],.gallery-preview[hidden]{display:none}
+.gallery-preview img{width:100%;height:128px;object-fit:cover;border-radius:10px;display:block;background:#EFF6FF}
+.gallery-editor-fields{display:grid;grid-template-columns:1fr;gap:6px}
+.gallery-editor-fields label{font-size:11px;font-weight:800;color:var(--admin-muted)}
+.gallery-editor-fields input,.gallery-editor-fields textarea{width:100%;border:1px solid var(--admin-border);border-radius:8px;padding:7px 9px;font:inherit;font-size:12px;background:#fff}
+.gallery-editor-fields textarea{resize:vertical;min-height:48px}
+.gallery-editor-fields input:focus,.gallery-editor-fields textarea:focus{outline:none;border-color:var(--admin-primary);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
+.gallery-actions{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.gallery-actions .form-message{margin:0}
+
 /* Mobile */
 @media(max-width:768px){
   .admin-sidebar{width:56px}
@@ -126,10 +146,13 @@ body{font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;font-
   .admin-main{margin-left:56px}
   .admin-content{padding:14px}
   .form-grid{grid-template-columns:1fr}
+  .gallery-settings-head{display:block}
+  .gallery-editor-grid{grid-template-columns:1fr}
   .admin-stats-grid{grid-template-columns:repeat(2,1fr)}
   .admin-topbar{padding:10px 14px}
 }
 @media(max-width:480px){
   .admin-table{font-size:11px}
   .admin-table th,.admin-table td{padding:7px 5px}
+  .gallery-settings{padding:14px}
 }

@@ -17,7 +17,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9825;</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=blue-banner-20260617">
+<link rel="stylesheet" href="css/style.css?v=gallery-20260619">
 </head>
 <body>
 
@@ -106,13 +106,21 @@
     </div>
   </section>
 
+  <!-- ====== HOME GALLERY ====== -->
+  <section class="module home-gallery-section" id="home-gallery" hidden>
+    <div class="module-kicker">Gallery</div>
+    <h2 class="module-title">照片墙 / 部门风采</h2>
+    <div class="module-line"></div>
+    <div id="homeGalleryGrid" class="home-gallery-grid"></div>
+  </section>
+
   <!-- ====== ORGANIZATION ====== -->
   <section class="module" id="organization">
     <div class="module-kicker">Organization</div>
     <h2 class="module-title">组织架构</h2>
     <div class="module-line"></div>
     <div class="dept-grid reveal">
-      <div class="dept-card"><h4>主席团</h4><p>协会整体统筹、发展规划、重大事项决策、部门协调与对外沟通</p></div>
+      <div class="dept-card"><h4>会长</h4><p>协会整体统筹、发展规划、重大事项决策、部门协调与对外沟通</p></div>
       <div class="dept-card"><h4>秘书部</h4><p>日常事务管理、会议记录、档案整理、通知发布、物资登记与资料归档</p></div>
       <div class="dept-card"><h4>组织部</h4><p>志愿者招募、成员管理、活动组织协调、人员安排、考勤统计与队伍建设</p></div>
       <div class="dept-card"><h4>行动部</h4><p>志愿服务活动执行落地、现场组织、秩序维护、服务实施与应急协调</p></div>
@@ -127,6 +135,7 @@
     <h2 class="module-title">活动风采</h2>
     <div class="module-line"></div>
     <div id="activitiesGrid" class="activities-grid"><div class="activities-loading">活动加载中...</div></div>
+    <div class="activity-toggle-wrap"><button type="button" id="activityToggle" class="btn btn-white btn-sm" hidden>展开更多</button></div>
   </section>
 
   <!-- ====== JOIN ====== -->
@@ -154,7 +163,7 @@
           <div class="form-field"><label for="regContact">联系方式 <span class="req">*</span></label><input type="text" id="regContact" required placeholder="手机号或微信号"></div>
           <div class="form-field"><label for="regDirection">意向部门</label><select id="regDirection">
             <option value="">请选择</option>
-            <option value="主席团">主席团</option><option value="秘书部">秘书部</option>
+            <option value="秘书部">秘书部</option>
             <option value="组织部">组织部</option><option value="行动部">行动部</option>
             <option value="外联部">外联部</option><option value="网宣部">网宣部</option>
             <option value="服从调剂">服从调剂</option>
@@ -221,8 +230,8 @@
 {"@context":"https://schema.org","@type":"Organization","name":"广东石油化工学院建筑工程学院青年志愿者协会","alternateName":"建工青协","url":"https://chenxuanzai107-dev.github.io/gyzy/","description":"汇聚青春力量，践行志愿精神。","parentOrganization":{"@type":"CollegeOrUniversity","name":"广东石油化工学院"},"address":{"@type":"PostalAddress","addressLocality":"茂名","addressRegion":"广东","streetAddress":"茂南区官渡二路139号","postalCode":"525000"},"telephone":"17600326088","email":"chenxuanzai107@gmail.com"}
 </script>
 
-<script src="js/backend-config.js?v=blue-banner-20260617"></script>
-<script src="js/unicloud-backend.js?v=blue-banner-20260617"></script>
-<script src="js/main.js?v=blue-banner-20260617"></script>
+<script src="js/backend-config.js?v=gallery-20260619"></script>
+<script src="js/unicloud-backend.js?v=gallery-20260619"></script>
+<script src="js/main.js?v=gallery-20260619"></script>
 </body>
 </html>
